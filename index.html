@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Samyama Pràctica</title>
+<meta name="description" content="Registre de pràctica de ioga: asana, pranayama i temps distret.">
+<meta name="theme-color" content="#F3F7FB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1D2D46" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pràctica">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Jost:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: una columna de 760px. A dalt, el rellotge ("ara" o "avui"); just a sota, els tres botons de registre
+   (Asana i Pranayama grans, Distret a tota l'amplada). Després, les estadístiques per període.
+   Codi de color fix a tota l'app: blau = asana, verd aigua = pranayama, coral = distret. */
+:root{
+  --bg:#F3F7FB; --surface:#FFFFFF; --surface-2:#E9F0F7; --ink:#1A2C45; --muted:#5B6E86; --line:#D8E2EE;
+  --asana:#3A8BD2; --asana-soft:#DCEBF9; --prana:#2F9C94; --prana-soft:#D7EFEC; --dist:#DE7550; --dist-soft:#FBE6DC;
+  --on-color:#FFFFFF; --brand:#3A8BD2;
+  --h0:#E4ECF4; --h1:#BFDBF3; --h2:#7DB6E8; --h3:#3A8BD2;
+  --display:'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
+  --body:'Jost', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1D2D46; --surface:#26395A; --surface-2:#2F4568; --ink:#EEF3F9; --muted:#AFC0D4; --line:#3D5479;
+  --asana:#8EC4F0; --asana-soft:#2F4D74; --prana:#7FD3C9; --prana-soft:#2A5560; --dist:#F5AE90; --dist-soft:#57434A;
+  --on-color:#15263D; --brand:#8EC4F0;
+  --h0:#2C4164; --h1:#36618E; --h2:#5A93C8; --h3:#8EC4F0; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#1D2D46; --surface:#26395A; --surface-2:#2F4568; --ink:#EEF3F9; --muted:#AFC0D4; --line:#3D5479;
+  --asana:#8EC4F0; --asana-soft:#2F4D74; --prana:#7FD3C9; --prana-soft:#2A5560; --dist:#F5AE90; --dist-soft:#57434A;
+  --on-color:#15263D; --brand:#8EC4F0;
+  --h0:#2C4164; --h1:#36618E; --h2:#5A93C8; --h3:#8EC4F0; color-scheme:dark }
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); -webkit-tap-highlight-color:transparent}
+html,body{min-height:100%}
+body{margin:0}
+body{overflow-x:clip; background:var(--bg); color:var(--ink); font-family:var(--body); font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit; color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--brand); outline-offset:3px; border-radius:8px}
+.wrap{overflow-x:clip; max-width:760px; margin:0 auto; padding-left:max(16px, env(safe-area-inset-left,0px)); padding-right:max(16px, env(safe-area-inset-right,0px)); padding-block:18px 72px; display:flex; flex-direction:column; gap:22px}
+.c-a{color:var(--asana)} .c-p{color:var(--prana)} .c-d{color:var(--dist)}
+
+/* capçalera */
+.top{display:flex; align-items:center; justify-content:space-between; gap:12px}
+.brand{display:flex; align-items:baseline; gap:10px}
+.brand b{font-family:var(--display); font-style:italic; font-weight:600; font-size:1.75rem; color:var(--brand)}
+.brand span{font-size:.7rem; letter-spacing:.2em; text-transform:uppercase; color:var(--muted)}
+.icon-btn{width:42px; height:42px; display:grid; place-items:center; border:1px solid var(--line); background:var(--surface); border-radius:50%}
+.icon-btn svg{width:20px; height:20px}
+
+/* ara / avui */
+.now{position:relative; display:flex; flex-direction:column; gap:12px; padding-top:6px}
+.now::before{content:""; position:absolute; right:-30px; top:-26px; width:220px; height:220px; border-radius:50%; border:1px solid var(--brand); opacity:.22; pointer-events:none}
+.now::after{content:""; position:absolute; right:16px; top:20px; width:128px; height:128px; border-radius:50%; border:1px solid var(--brand); opacity:.14; pointer-events:none}
+.now-top{display:flex; align-items:center; gap:12px; flex-wrap:wrap; position:relative}
+.pill{display:inline-flex; align-items:center; gap:8px; font-size:.74rem; letter-spacing:.2em; text-transform:uppercase; font-weight:600; color:var(--muted)}
+.pill.c-a{color:var(--asana)} .pill.c-p{color:var(--prana)} .pill.c-d{color:var(--dist)}
+.pill i{width:8px; height:8px; border-radius:50%; background:currentColor}
+.pill.live i{animation:pulse 3.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.3; transform:scale(.8)} 40%{opacity:1; transform:scale(1.3)}}
+.date{font-size:.8rem; color:var(--muted)}
+.big{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; position:relative}
+.big .n{font-family:var(--display); font-weight:500; font-size:clamp(4rem, 17vw, 6.2rem); line-height:.85; font-variant-numeric:tabular-nums; letter-spacing:-.02em}
+.big .u{font-family:var(--display); font-style:italic; font-size:1.4rem; color:var(--muted)}
+.split{display:flex; flex-wrap:wrap; gap:4px 16px; font-size:.95rem; font-variant-numeric:tabular-nums; position:relative}
+.split b{font-weight:500}
+.bar{display:flex; height:8px; border-radius:6px; overflow:hidden; background:var(--surface-2); position:relative}
+.bar i{display:block; height:100%; min-width:0}
+.bar .asana{background:var(--asana)} .bar .pranayama{background:var(--prana)} .bar .distracted{background:var(--dist)}
+.now .bar{max-width:460px}
+.streak{font-size:.86rem; color:var(--muted); position:relative}
+.streak:empty{display:none}
+
+/* botons */
+.pads{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+.pad{--c:var(--asana); border:1.5px solid var(--c); background:var(--surface); color:var(--ink); border-radius:24px; min-height:148px; padding:16px 18px 18px;
+  display:flex; flex-direction:column; justify-content:space-between; align-items:flex-start; gap:12px; text-align:left; min-width:0; transition:background .25s, color .25s, transform .12s, box-shadow .25s}
+.pad:active{transform:scale(.98)}
+.pad.prana{--c:var(--prana)}
+.pad.dist{--c:var(--dist); grid-column:1/-1; min-height:72px; flex-direction:row; align-items:center}
+.pad .pk{display:flex; align-items:center; gap:8px; font-size:.72rem; letter-spacing:.18em; text-transform:uppercase; font-weight:600; color:var(--c)}
+.pad .pk i{width:8px; height:8px; border-radius:50%; background:currentColor; opacity:.35}
+.pad .pn{display:block; font-family:var(--display); font-weight:500; font-size:clamp(1.55rem, 6.2vw, 2.5rem); line-height:1; margin-top:6px}
+.pad.dist .pn{font-size:1.7rem; margin:0}
+.pad .pt{font-family:var(--display); font-size:1.6rem; line-height:1; font-variant-numeric:tabular-nums; color:var(--c)}
+.pad .pt small{font-family:var(--body); font-size:.78rem; color:var(--muted); margin-right:5px}
+.pad.dist .left{display:flex; flex-direction:column; gap:2px}
+.pad[aria-pressed="true"]{background:var(--c); color:var(--on-color); box-shadow:0 14px 34px -18px var(--c)}
+.pad[aria-pressed="true"] .pk, .pad[aria-pressed="true"] .pt, .pad[aria-pressed="true"] .pt small{color:var(--on-color)}
+.pad[aria-pressed="true"] .pk i{opacity:1; animation:pulse 3.6s ease-in-out infinite}
+.pad:disabled{opacity:.45; cursor:default}
+.pad:disabled:active{transform:none}
+.hint{margin:0; font-family:var(--display); font-style:italic; font-size:1.15rem; color:var(--muted)}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chips button{background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:7px 14px; font-size:.9rem}
+.chips button[aria-pressed="true"]{background:var(--dist); border-color:var(--dist); color:var(--on-color)}
+.cause-box{display:flex; flex-direction:column; gap:10px}
+.lbl{font-size:.72rem; letter-spacing:.16em; text-transform:uppercase; color:var(--muted)}
+.notice{background:var(--dist-soft); border-radius:16px; padding:14px 16px; display:flex; gap:12px; align-items:baseline; flex-wrap:wrap}
+.notice b{font-family:var(--display); font-size:1.7rem; font-weight:500; color:var(--dist); font-variant-numeric:tabular-nums; line-height:1}
+.notice span{font-size:.92rem}
+.end-row{display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap}
+.end-btn{background:transparent; border:1px solid var(--line); border-radius:999px; padding:10px 18px; font-size:.92rem}
+.end-btn.confirm{border-color:var(--ink); background:var(--ink); color:var(--bg)}
+.small-muted{font-size:.84rem; color:var(--muted)}
+
+/* resum de sessió */
+.summary{background:var(--surface); border:1px solid var(--line); border-radius:22px; padding:18px; display:flex; flex-direction:column; gap:14px}
+.summary h3{font-family:var(--display); font-weight:500; font-size:1.8rem; margin:0; line-height:1}
+.sum-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(100px,1fr)); gap:12px}
+.sum-grid div{font-size:.78rem; color:var(--muted)}
+.sum-grid b{display:block; font-family:var(--display); font-weight:500; font-size:1.7rem; color:var(--ink); font-variant-numeric:tabular-nums; line-height:1.1}
+.sum-grid b.c-a{color:var(--asana)} .sum-grid b.c-p{color:var(--prana)} .sum-grid b.c-d{color:var(--dist)}
+.note{width:100%; min-height:64px; resize:vertical; background:var(--bg); border:1px solid var(--line); border-radius:14px; padding:10px 12px; font-family:var(--display); font-style:italic; font-size:1.1rem}
+.btn{border:0; border-radius:999px; padding:11px 22px; font-weight:500; background:var(--ink); color:var(--bg)}
+.btn-ghost{background:transparent; color:var(--ink); border:1px solid var(--line)}
+.row-actions{display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end}
+
+/* estadístiques */
+.stats{display:flex; flex-direction:column; gap:32px; margin-top:26px; padding-top:30px; border-top:1px solid var(--line)}
+.stats-head{display:flex; justify-content:space-between; align-items:flex-end; gap:14px; flex-wrap:wrap}
+.stats-head h2{font-family:var(--display); font-weight:500; font-size:2.2rem; margin:0; line-height:1}
+.seg{display:inline-flex; flex-wrap:wrap; border:1px solid var(--line); border-radius:22px; padding:3px; background:var(--surface); gap:2px; max-width:100%}
+.seg input{position:absolute; opacity:0; pointer-events:none}
+.seg label{padding:6px 13px; border-radius:999px; font-size:.88rem; cursor:pointer; color:var(--muted)}
+.seg input:checked + label{background:var(--asana-soft); color:var(--ink); font-weight:500}
+.seg input:focus-visible + label{outline:2px solid var(--brand)}
+.daynav{display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:5px}
+.daynav b{font-family:var(--display); font-weight:500; font-size:1.3rem; text-align:center; min-width:0}
+.daynav .icon-btn{font-size:1.4rem; line-height:1; border:0; background:var(--surface-2)}
+.daynav .icon-btn:disabled{opacity:.35; cursor:default}
+.example{background:var(--surface-2); border-radius:14px; padding:12px 16px; font-size:.9rem; display:flex; gap:10px; align-items:baseline; flex-wrap:wrap}
+.example b{font-size:.72rem; letter-spacing:.16em; text-transform:uppercase}
+
+.kpis{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:20px; overflow:hidden}
+@media (max-width:540px){ .kpis{grid-template-columns:repeat(2, minmax(0,1fr))} }
+.kpi{background:var(--surface); padding:14px 16px 16px; display:flex; flex-direction:column; gap:2px; min-width:0}
+.kpi .k{font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); display:flex; align-items:center; gap:7px}
+.kpi .k i{width:8px; height:8px; border-radius:2px; display:inline-block}
+.kpi .v{font-family:var(--display); font-weight:500; font-size:2.1rem; line-height:1.1; font-variant-numeric:tabular-nums}
+.kpi .v small{font-family:var(--body); font-size:.85rem; color:var(--muted); margin-left:2px; font-weight:400}
+.kpi .s{font-size:.8rem; color:var(--muted)}
+.up{color:var(--prana)} .down{color:var(--dist)}
+
+.block{display:flex; flex-direction:column; gap:14px; min-width:0}
+.block h3{font-family:var(--display); font-weight:500; font-size:1.5rem; margin:0; line-height:1.1}
+.block-head{display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap}
+.legend{display:flex; gap:14px; flex-wrap:wrap; font-size:.8rem; color:var(--muted)}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend i{width:10px; height:10px; border-radius:3px; display:inline-block}
+.two{display:grid; grid-template-columns:1fr 1fr; gap:32px 34px}
+@media (max-width:620px){ .two{grid-template-columns:1fr} }
+
+/* gràfic de barres */
+.chart{display:flex; flex-direction:column; gap:6px}
+.plot{position:relative; height:190px; margin-left:38px}
+.gl{position:absolute; left:0; right:0; border-top:1px solid var(--line)}
+.gl em{position:absolute; left:-38px; top:-.65em; width:32px; text-align:right; font-style:normal; font-size:.7rem; color:var(--muted); font-variant-numeric:tabular-nums}
+.goal-l{position:absolute; left:0; right:0; border-top:1.5px dashed var(--muted); opacity:.75; pointer-events:none; z-index:1}
+.goal-l span{position:absolute; right:0; top:-17px; font-size:.68rem; color:var(--muted); background:var(--bg); padding-left:6px}
+.bars{position:absolute; inset:0; display:grid; grid-template-columns:repeat(var(--n), minmax(0,1fr)); gap:var(--gap,6px)}
+.bars button{height:100%; border:0; background:transparent; padding:0; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; min-width:0; border-radius:6px}
+.stack{display:flex; flex-direction:column-reverse; width:100%; max-width:38px; border-radius:5px; overflow:hidden; min-height:0}
+.stack i{display:block; width:100%; min-height:0}
+.stack .a{background:var(--asana)} .stack .p{background:var(--prana)} .stack .d{background:var(--dist); opacity:.85}
+.bars button.sel .stack{outline:2px solid var(--ink); outline-offset:2px}
+.xl{display:grid; grid-template-columns:repeat(var(--n), minmax(0,1fr)); gap:var(--gap,6px); margin-left:38px; font-size:.68rem; color:var(--muted); text-align:center; letter-spacing:.04em}
+.xl span{white-space:nowrap}
+.xl span.t{color:var(--ink); font-weight:600}
+.readout{margin-left:38px; font-size:.9rem; min-height:1.5em; font-variant-numeric:tabular-nums}
+.readout b{font-weight:500}
+
+/* donut */
+.donut-wrap{display:flex; align-items:center; gap:22px; flex-wrap:wrap}
+.donut{width:136px; height:136px; flex:none; position:relative}
+.donut svg{width:136px; height:136px; transform:rotate(-90deg)}
+.donut .ctr{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center}
+.donut .ctr b{font-family:var(--display); font-weight:500; font-size:2rem; line-height:1; font-variant-numeric:tabular-nums}
+.donut .ctr span{font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
+.dl{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; min-width:0; flex:1}
+.dl li{display:grid; grid-template-columns:12px 1fr auto; gap:10px; align-items:baseline; font-size:.92rem}
+.dl li i{width:10px; height:10px; border-radius:3px; display:inline-block}
+.dl li span:last-child{color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap}
+
+/* hores */
+.hours{display:grid; grid-template-columns:repeat(24, minmax(0,1fr)); gap:2px; height:96px; align-items:end}
+.hours i{display:block; background:var(--asana); border-radius:3px 3px 0 0; opacity:.8}
+.hours i.zero{background:var(--surface-2); opacity:1}
+.hours i.peak{opacity:1; background:var(--prana)}
+.hours-x{display:grid; grid-template-columns:repeat(4, 1fr); font-size:.66rem; color:var(--muted)}
+.insight{margin:0; font-family:var(--display); font-style:italic; font-size:1.12rem}
+
+/* files horitzontals */
+.rows{display:flex; flex-direction:column; gap:9px}
+.hrow{display:grid; grid-template-columns:96px minmax(0,1fr) auto; gap:12px; align-items:center; font-size:.9rem}
+.hrow .tr{height:10px; background:var(--surface-2); border-radius:6px; overflow:hidden}
+.hrow .tr i{display:block; height:100%; border-radius:6px}
+.hrow .val{font-variant-numeric:tabular-nums; color:var(--muted); font-size:.84rem; white-space:nowrap}
+.hrow.best span:first-child{font-weight:600}
+
+/* mapa de calor */
+.heat{display:grid; grid-template-columns:22px repeat(13, minmax(0,1fr)); gap:4px; max-width:420px}
+.heat .ml{font-size:.66rem; color:var(--muted); white-space:nowrap; height:14px}
+.heat .wl{font-size:.64rem; color:var(--muted); line-height:1; align-self:center}
+.heat .c{aspect-ratio:1; border-radius:4px; background:var(--h0); max-width:100%}
+.heat .c.l1{background:var(--h1)} .heat .c.l2{background:var(--h2)} .heat .c.l3{background:var(--h3)}
+.heat .c.fut{background:transparent; border:1px dashed var(--line)}
+.heat .c.tod{outline:1.5px solid var(--ink); outline-offset:1px}
+.heat-key{display:flex; align-items:center; gap:5px; font-size:.72rem; color:var(--muted)}
+.heat-key i{width:12px; height:12px; border-radius:3px; display:inline-block}
+
+.facts{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:18px; overflow:hidden}
+@media (min-width:621px){ .facts.f3{grid-template-columns:repeat(3, minmax(0,1fr))} }
+.facts div{background:var(--surface); padding:12px 14px; font-size:.8rem; color:var(--muted); min-width:0}
+.facts b{display:block; font-family:var(--display); font-weight:500; font-size:1.55rem; color:var(--ink); line-height:1.15; font-variant-numeric:tabular-nums}
+
+/* sessions */
+.sessions{list-style:none; margin:0; padding:0; display:flex; flex-direction:column}
+.sessions > li{border-top:1px solid var(--line)}
+.sessions details summary{list-style:none; cursor:pointer; display:grid; grid-template-columns:60px minmax(0,1fr); gap:14px; padding:14px 0}
+.sessions details summary::-webkit-details-marker{display:none}
+.sd{font-size:.76rem; color:var(--muted); line-height:1.3}
+.sd b{display:block; font-family:var(--display); font-size:1.5rem; color:var(--ink); font-weight:500}
+.sb{display:flex; flex-direction:column; gap:7px; min-width:0}
+.st{display:flex; flex-wrap:wrap; gap:3px 14px; font-size:.88rem; font-variant-numeric:tabular-nums}
+.st b{font-weight:500}
+.sn{font-family:var(--display); font-style:italic; font-size:1.08rem; overflow-wrap:anywhere}
+.s-body{padding:0 0 16px 74px; display:flex; flex-direction:column; gap:10px}
+@media (max-width:460px){ .s-body{padding-left:0} }
+.linkish{background:none; border:0; padding:0; text-decoration:underline; text-underline-offset:3px; font-size:.86rem}
+.danger{color:var(--dist)}
+.empty{color:var(--muted); font-family:var(--display); font-style:italic; font-size:1.12rem; margin:0}
+.foot{font-size:.8rem; color:var(--muted); text-align:center; margin-top:20px}
+
+/* full d'ajustos */
+.scrim{position:fixed; inset:0; background:rgba(20,34,56,.45); display:flex; align-items:flex-end; justify-content:center; z-index:50}
+.sheet{background:var(--surface); width:100%; max-width:560px; border-radius:22px 22px 0 0; padding:22px max(20px, env(safe-area-inset-right,0px)) max(26px, env(safe-area-inset-bottom,0px)) max(20px, env(safe-area-inset-left,0px)); max-height:90%; overflow:auto; display:flex; flex-direction:column; gap:12px}
+.sheet h3{font-family:var(--display); font-weight:500; font-size:1.8rem; margin:0}
+.srow{display:flex; justify-content:space-between; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid var(--line); flex-wrap:wrap}
+.srow > span:first-child small{display:block; color:var(--muted); font-size:.82rem}
+.sw{position:relative; width:46px; height:28px; flex:none}
+.sw input{position:absolute; inset:0; opacity:0; cursor:pointer; margin:0}
+.sw i{position:absolute; inset:0; border-radius:999px; background:var(--surface-2); border:1px solid var(--line); transition:background .2s}
+.sw i::after{content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:var(--muted); transition:transform .2s, background .2s}
+.sw input:checked + i{background:var(--asana)} .sw input:checked + i::after{transform:translateX(18px); background:var(--on-color)}
+.sw input:focus-visible + i{outline:2px solid var(--brand); outline-offset:2px}
+.data-box{width:100%; min-height:90px; font-family:ui-monospace, Menlo, Consolas, monospace; font-size:.75rem; background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:10px}
+.toast{position:fixed; left:50%; bottom:max(20px, env(safe-area-inset-bottom,0px)); transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:10px 18px; border-radius:999px; font-size:.9rem; z-index:60}
+
+@media (prefers-reduced-motion: reduce){ *{transition:none!important; animation:none!important} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><b>samyama</b><span>Pràctica</span></div>
+    <button class="icon-btn" id="openSettings" aria-label="Ajustos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2.5 12h3M18.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+    </button>
+  </header>
+
+  <section id="summary" hidden></section>
+
+  <section class="now" aria-live="polite">
+    <div class="now-top"><span class="pill" id="pill"><i></i><span id="pillTxt">Avui</span></span><span class="date" id="date"></span></div>
+    <div class="big"><span class="n" id="big">0</span><span class="u" id="unit">min de pràctica avui</span></div>
+    <div class="split" id="split"></div>
+    <div class="bar" id="nowBar"></div>
+    <div class="streak" id="streak"></div>
+  </section>
+
+  <div class="notice" id="away" hidden></div>
+
+  <section class="pads" aria-label="Registre de pràctica">
+    <button class="pad asana" id="padA" aria-pressed="false"><span><span class="pk"><i></i>Postures</span><span class="pn">Asana</span></span><span class="pt" id="tA"></span></button>
+    <button class="pad prana" id="padP" aria-pressed="false"><span><span class="pk"><i></i>Respiració</span><span class="pn">Pranayama</span></span><span class="pt" id="tP"></span></button>
+    <button class="pad dist" id="padD" aria-pressed="false"><span class="left"><span class="pk"><i></i>M'he distret</span><span class="pn">Distret</span></span><span class="pt" id="tD"></span></button>
+  </section>
+
+  <div class="cause-box" id="causeBox" hidden>
+    <span class="lbl">Què t'ha distret?</span>
+    <div class="chips" id="causeChips"></div>
+  </div>
+  <div class="end-row">
+    <p class="hint" id="hint"></p>
+    <button class="end-btn" id="endBtn" hidden>Acaba la sessió</button>
+  </div>
+
+  <section class="stats" id="stats"></section>
+
+  <p class="foot">Les dades es guarden només en aquest navegador. Pots copiar-les des dels ajustos.</p>
+</div>
+<div id="sheetHost"></div>
+
+<script>
+/* =================== base =================== */
+const CAUSES = ["Mòbil","Missatges","Pensaments","Casa","Feina","Cansament","Altres"];
+const DAYS = ["dg","dl","dt","dc","dj","dv","ds"];
+const DAYS_LONG = ["diumenge","dilluns","dimarts","dimecres","dijous","divendres","dissabte"];
+const NAMES = {asana:"Asana", pranayama:"Pranayama", distracted:"Distret"};
+const PRACT = k => k === "asana" || k === "pranayama";
+const KEY = "samyama-practica3:";
+const store = {
+  get(k,d){ try{ const v = localStorage.getItem(KEY+k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem(KEY+k, JSON.stringify(v)); }catch(e){} },
+  del(k){ try{ localStorage.removeItem(KEY+k); }catch(e){} }
+};
+let settings = Object.assign({goal:30, interval:0, autoAway:true, askCause:true, period:"week"}, store.get("settings",{}));
+let sessions = store.get("sessions", []);
+let S = store.get("live", null);
+let SAMPLE = null, endT = null, dayOff = 0;
+
+const $ = s => document.querySelector(s);
+const pad2 = n => String(n).padStart(2,"0");
+const dkey = d => d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
+const sod = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const addDays = (d,n) => new Date(d.getFullYear(), d.getMonth(), d.getDate()+n);
+const mondayOf = d => addDays(sod(d), -((d.getDay()+6)%7));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
+function clock(ms){ let s = Math.max(0, Math.floor(ms/1000)); const h = Math.floor(s/3600); s %= 3600; const m = Math.floor(s/60); s %= 60; return h ? h+":"+pad2(m)+":"+pad2(s) : m+":"+pad2(s); }
+function dur(ms){ const m = Math.round(ms/60000); if(ms > 0 && m < 1) return "<1 min"; if(m < 60) return m+" min"; return Math.floor(m/60)+" h"+(m%60 ? " "+pad2(m%60) : ""); }
+function durHTML(ms){ const m = Math.round(ms/60000); if(ms > 0 && m < 1) return `&lt;1<small>min</small>`; if(m < 60) return `${m}<small>min</small>`; return `${Math.floor(m/60)}<small>h</small>${m%60 ? " "+pad2(m%60)+"<small>min</small>" : ""}`; }
+function secs(ms){ const s = Math.round(ms/1000); return s < 60 ? s+" s" : s < 600 && s%60 ? Math.floor(s/60)+" min "+(s%60)+" s" : dur(ms); }
+const pct = (a,b) => b > 0 ? Math.round(100*a/b) : 0;
+const fmtDate = (d, o) => new Intl.DateTimeFormat("ca-ES", o).format(d);
+const mon3 = d => fmtDate(d,{month:"short"}).replace(".","");
+function toast(t){ const el = document.createElement("div"); el.className = "toast"; el.textContent = t; document.body.appendChild(el); setTimeout(() => el.remove(), 2200); }
+
+function totals(segs){ const t = {asana:0, pranayama:0, distracted:0}; segs.forEach(([k,a,b]) => t[k] += b-a); t.practice = t.asana + t.pranayama; return t; }
+function tot(s){ return s._t || (s._t = totals(s.segs)); }
+function liveSegs(){ return S ? S.segs.concat([[S.cur.kind, S.cur.start, Date.now()]]) : []; }
+
+/* =================== so i pantalla =================== */
+let actx = null, master = null;
+function audio(){ try{ if(!actx){ actx = new (window.AudioContext||window.webkitAudioContext)(); master = actx.createGain(); master.gain.value = .9; master.connect(actx.destination); } if(actx.state === "suspended") actx.resume(); return actx; }catch(e){ return null; } }
+function bell(str = 1){
+  const ctx = audio(); if(!ctx) return; const t = ctx.currentTime;
+  [[1,1,5],[1.004,.6,5],[2.71,.45,3.2],[5.15,.22,2],[8.6,.1,1.2]].forEach(([r,g,d]) => {
+    const o = ctx.createOscillator(), gn = ctx.createGain(), len = d*(.55+.45*str);
+    o.type = "sine"; o.frequency.value = 392*r;
+    gn.gain.setValueAtTime(.0001, t); gn.gain.exponentialRampToValueAtTime(.22*g*str, t+.012); gn.gain.exponentialRampToValueAtTime(.0001, t+len);
+    o.connect(gn); gn.connect(master); o.start(t); o.stop(t+len+.05);
+  });
+}
+let wake = null;
+async function keepAwake(){ try{ if("wakeLock" in navigator && !wake && !document.hidden){ wake = await navigator.wakeLock.request("screen"); wake.addEventListener("release", () => wake = null); } }catch(e){ wake = null; } }
+function releaseAwake(){ try{ wake && wake.release(); }catch(e){} wake = null; }
+
+/* =================== sessió en curs =================== */
+function saveLive(){ if(S){ S.lastSeen = Date.now(); store.set("live", S); } else store.del("live"); }
+
+function switchTo(kind, type){
+  const now = Date.now();
+  audio();
+  if(!S){
+    if(!PRACT(kind)) return;
+    $("#summary").hidden = true;
+    S = {id:"s"+now, t0:now, segs:[], events:[], cur:{kind, start:now}, open:null, lastBell:0, away:null};
+    keepAwake();
+  } else {
+    if(S.cur.kind === kind) return;
+    if(now - S.cur.start >= 1000) S.segs.push([S.cur.kind, S.cur.start, now]);
+    if(S.cur.kind === "distracted" && S.open){ S.open.end = now; S.events.push(S.open); S.open = null; }
+    S.cur = {kind, start:now};
+  }
+  if(kind === "distracted") S.open = {start:now, end:0, cause: type === "auto" ? "Mòbil" : "", type: type || "manual"};
+  if(PRACT(kind)) S.away = null;
+  saveLive(); renderLive(true);
+}
+
+function endSession(at){
+  if(!S) return;
+  at = at || Date.now();
+  let segs = S.segs.slice();
+  if(at - S.cur.start >= 1000) segs.push([S.cur.kind, S.cur.start, at]);
+  let events = S.events.slice();
+  // la distracció final (el moment d'aturar) no compta
+  while(segs.length && segs[segs.length-1][0] === "distracted"){ const last = segs.pop(); events = events.filter(e => e.start < last[1]); }
+  const merged = []; segs.forEach(s => { const l = merged[merged.length-1]; if(l && l[0] === s[0] && s[1] - l[2] < 1500) l[2] = s[2]; else merged.push(s.slice()); });
+  const entry = {id:S.id, t0:S.t0, t1: merged.length ? merged[merged.length-1][2] : at, segs:merged, events, note:""};
+  S = null; saveLive(); releaseAwake();
+  if(totals(entry.segs).practice >= 20000){ sessions.push(entry); store.set("sessions", sessions); showSummary(entry); }
+  else { $("#summary").hidden = true; toast("Sessió massa curta: no s'ha desat."); }
+  renderLive(true); renderStats();
+}
+
+/* si la pàgina s'havia tancat a mitja sessió */
+function recover(){
+  if(!S) return;
+  const gap = Date.now() - (S.lastSeen || Date.now());
+  if(gap > 3*3600e3){ endSession(S.lastSeen); return; }
+  if(gap > 20000 && PRACT(S.cur.kind)){
+    const t = S.lastSeen; S.segs.push([S.cur.kind, S.cur.start, t]);
+    S.cur = {kind:"distracted", start:t}; S.open = {start:t, end:0, cause:"Mòbil", type:"auto"}; S.away = t;
+    saveLive();
+  }
+  keepAwake();
+}
+
+document.addEventListener("visibilitychange", () => {
+  if(!S) return;
+  if(document.hidden){
+    if(settings.autoAway && PRACT(S.cur.kind)){ switchTo("distracted", "auto"); S.away = S.cur.start; saveLive(); }
+  } else { wake = null; keepAwake(); renderLive(true); }
+});
+setInterval(() => { if(S && !document.hidden) saveLive(); }, 5000);
+
+/* =================== estat en directe =================== */
+function timelineInner(segs){
+  const total = segs.reduce((a,s) => a + s[2]-s[1], 0) || 1;
+  return segs.map(s => `<i class="${s[0]}" style="width:${100*(s[2]-s[1])/total}%"></i>`).join("");
+}
+function renderLive(full){
+  const now = Date.now(), today = dkey(new Date());
+  $("#date").textContent = cap(fmtDate(new Date(), {weekday:"long", day:"numeric", month:"long"}));
+  const pill = $("#pill");
+  if(S){
+    const segs = liveSegs(), t = totals(segs), k = S.cur.kind;
+    pill.className = "pill live " + (k === "asana" ? "c-a" : k === "pranayama" ? "c-p" : "c-d");
+    $("#pillTxt").textContent = k === "distracted" ? "Distret" : "Ara · "+NAMES[k];
+    $("#big").textContent = clock(t.practice);
+    $("#unit").textContent = "de pràctica en aquesta sessió";
+    $("#split").innerHTML = `<span class="c-a"><b>${clock(t.asana)}</b> asana</span><span class="c-p"><b>${clock(t.pranayama)}</b> pranayama</span><span class="c-d"><b>${clock(t.distracted)}</b> distret · ${S.events.length + (S.open ? 1 : 0)}×</span>`;
+    $("#nowBar").innerHTML = timelineInner(segs);
+    $("#tA").textContent = clock(t.asana); $("#tP").textContent = clock(t.pranayama);
+    $("#tD").textContent = clock(t.distracted);
+    if(settings.interval && PRACT(k)){ const n = Math.floor(t.practice/(settings.interval*60000)); if(n > (S.lastBell||0)){ S.lastBell = n; bell(.45); } }
+    if(full){
+      $("#streak").textContent = "";
+      $("#padA").setAttribute("aria-pressed", k === "asana"); $("#padP").setAttribute("aria-pressed", k === "pranayama"); $("#padD").setAttribute("aria-pressed", k === "distracted");
+      $("#padD").disabled = false;
+      $("#endBtn").hidden = false;
+      $("#hint").textContent = k === "distracted" ? "Quan tornis a l'esterilla, toca Asana o Pranayama." : "Quan te n'adonis que t'has distret, toca Distret.";
+      const cb = $("#causeBox"); cb.hidden = !(k === "distracted" && settings.askCause);
+      if(!cb.hidden) renderCauseChips();
+    }
+    const aw = $("#away");
+    if(S.away && k === "distracted"){ aw.hidden = false; aw.innerHTML = `<b>${clock(now - S.away)}</b><span>fora de l'app. Compta com a distret fins que tornis a tocar Asana o Pranayama.</span>`; }
+    else aw.hidden = true;
+  } else {
+    const td = sumList(sessions.filter(s => dkey(new Date(s.t0)) === today)), pr = td.asana + td.pranayama, goal = settings.goal*60000;
+    pill.className = "pill"; $("#pillTxt").textContent = "Avui";
+    $("#big").textContent = Math.floor(pr/60000);
+    $("#unit").textContent = `min de pràctica avui · objectiu ${settings.goal}`;
+    $("#split").innerHTML = pr || td.distracted ? `<span class="c-a"><b>${dur(td.asana)}</b> asana</span><span class="c-p"><b>${dur(td.pranayama)}</b> pranayama</span><span class="c-d"><b>${dur(td.distracted)}</b> distret</span>` : `<span style="color:var(--muted)">Encara no has practicat avui.</span>`;
+    const scale = Math.max(goal, pr + td.distracted);
+    $("#nowBar").innerHTML = `<i class="asana" style="width:${100*td.asana/scale}%"></i><i class="pranayama" style="width:${100*td.pranayama/scale}%"></i><i class="distracted" style="width:${100*td.distracted/scale}%"></i>`;
+    const st = streaks(sessions);
+    $("#streak").textContent = st.current >= 2 ? `Ratxa de ${st.current} dies seguits.` : "";
+    $("#tA").innerHTML = `<small>avui</small>${dur(td.asana)}`; $("#tP").innerHTML = `<small>avui</small>${dur(td.pranayama)}`; $("#tD").innerHTML = `<small>avui</small>${dur(td.distracted)}`;
+    ["#padA","#padP","#padD"].forEach(id => $(id).setAttribute("aria-pressed", false));
+    $("#padD").disabled = true;
+    $("#endBtn").hidden = true; resetEnd();
+    $("#hint").textContent = "Toca Asana o Pranayama per començar a comptar.";
+    $("#causeBox").hidden = true; $("#away").hidden = true;
+  }
+}
+function renderCauseChips(){
+  const box = $("#causeChips"), cur = S && S.open ? S.open.cause : "";
+  box.innerHTML = CAUSES.map(c => `<button aria-pressed="${c === cur}" data-c="${c}">${c}</button>`).join("");
+  box.querySelectorAll("button").forEach(b => b.onclick = () => { if(!S || !S.open) return; S.open.cause = S.open.cause === b.dataset.c ? "" : b.dataset.c; saveLive(); renderCauseChips(); });
+}
+
+$("#padA").onclick = () => switchTo("asana");
+$("#padP").onclick = () => switchTo("pranayama");
+$("#padD").onclick = () => switchTo("distracted", "manual");
+function resetEnd(){ const b = $("#endBtn"); b.classList.remove("confirm"); b.textContent = "Acaba la sessió"; clearTimeout(endT); }
+$("#endBtn").onclick = () => {
+  const b = $("#endBtn");
+  if(b.classList.contains("confirm")){ resetEnd(); endSession(); return; }
+  b.classList.add("confirm"); b.textContent = "Toca per confirmar"; endT = setTimeout(resetEnd, 3500);
+};
+setInterval(() => { if(S) renderLive(false); }, 250);
+
+function showSummary(e){
+  const t = totals(e.segs), box = $("#summary");
+  const h = d => fmtDate(new Date(d), {hour:"2-digit", minute:"2-digit"});
+  const f = pct(t.practice, t.practice+t.distracted);
+  const head = !e.events.length ? "Cap distracció." : f >= 90 ? "Molt present." : "Sessió desada.";
+  box.hidden = false;
+  box.innerHTML = `<div class="summary">
+    <div class="block-head"><span class="lbl">Sessió de ${h(e.t0)} a ${h(e.t1)}</span><button class="linkish" id="sumClose">Tanca</button></div>
+    <h3>${head}</h3>
+    <div class="sum-grid">
+      <div><b>${clock(t.practice)}</b>pràctica</div>
+      <div><b class="c-a">${clock(t.asana)}</b>asana</div>
+      <div><b class="c-p">${clock(t.pranayama)}</b>pranayama</div>
+      <div><b class="c-d">${clock(t.distracted)}</b>distret · ${e.events.length}×</div>
+      <div><b>${f}%</b>de focus</div>
+    </div>
+    <div class="bar" style="height:12px">${timelineInner(e.segs)}</div>
+    <textarea class="note" id="sumNote" placeholder="Una línia per a tu: com ha anat?"></textarea>
+  </div>`;
+  $("#sumNote").oninput = ev => { const s = sessions.find(x => x.id === e.id); if(s){ s.note = ev.target.value.slice(0,280); store.set("sessions", sessions); } };
+  $("#sumNote").onchange = () => renderStats();
+  $("#sumClose").onclick = () => { box.hidden = true; renderStats(); };
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+/* =================== estadístiques =================== */
+function sample(){
+  let seed = 11; const rnd = () => (seed = (seed*16807) % 2147483647) / 2147483647;
+  const W = [["Mòbil",.34],["Pensaments",.26],["Missatges",.15],["Casa",.12],["Feina",.08],["Cansament",.05]];
+  const pick = () => { let r = rnd(), acc = 0; for(const [c,w] of W){ acc += w; if(r <= acc) return c; } return "Altres"; };
+  const NOTES = ["Esquena més lliure després de les torsions.","Costava començar; després, molt bé.","Pranayama molt calmat, respiració llarga.","Massa pensaments de feina.","Invertides estables avui.","Cansat, però hi he estat."];
+  const out = [], today = sod(new Date());
+  for(let i = 100; i >= 1; i--){
+    const day = addDays(today, -i), dow = day.getDay();
+    const p = (dow === 0 ? .3 : dow === 6 ? .5 : .72) + (i < 30 ? .12 : 0);
+    if(rnd() > p) continue;
+    const morning = rnd() < .7;
+    let t = day.getTime() + (morning ? 6.8 + rnd()*1.6 : 18.4 + rnd()*2.2)*3600e3;
+    const t0 = t, segs = [], events = [];
+    const target = (18 + rnd()*42)*60e3; let done = 0;
+    const distrP = i < 30 ? .38 : .6;
+    while(done < target){
+      const run = Math.min(target-done, (5 + rnd()*24)*60e3); segs.push(["asana", t, t+run]); t += run; done += run;
+      if(done < target && rnd() < distrP){ const dl = (.25 + rnd()*rnd()*7)*60e3, c = pick(); segs.push(["distracted", t, t+dl]); events.push({start:t, end:t+dl, cause:c, type: c === "Mòbil" && rnd() < .6 ? "auto" : "manual"}); t += dl; }
+    }
+    if(rnd() < .68){ const pr = (5 + rnd()*13)*60e3; segs.push(["pranayama", t, t+pr]); t += pr; }
+    out.push({id:"ex"+i, t0, t1:t, segs, events, note: rnd() < .14 ? NOTES[Math.floor(rnd()*NOTES.length)] : ""});
+  }
+  return out;
+}
+
+function streaks(list){
+  const days = new Set(list.filter(s => tot(s).practice >= 60000).map(s => dkey(new Date(s.t0))));
+  let cur = 0, d = sod(new Date());
+  if(!days.has(dkey(d))) d = addDays(d, -1);
+  while(days.has(dkey(d))){ cur++; d = addDays(d, -1); }
+  let best = 0, run = 0, prev = null;
+  [...days].sort().forEach(k => { const dt = new Date(k+"T12:00:00"); run = prev && Math.round((dt - prev)/864e5) === 1 ? run+1 : 1; best = Math.max(best, run); prev = dt; });
+  return {current:cur, best};
+}
+function range(period, data){
+  const today = sod(new Date()), end = addDays(today, 1), mon = mondayOf(today);
+  if(period === "day"){ const d = addDays(today, -dayOff); return {start:d, end:addDays(d,1), prev:[addDays(d,-1), d], label: dayOff ? "aquest dia" : "avui", prevLabel: dayOff ? "el dia anterior" : "ahir"}; }
+  if(period === "week") return {start:mon, end, prev:[addDays(mon,-7), mon], label:"aquesta setmana", prevLabel:"la setmana passada"};
+  if(period === "month") return {start:addDays(today,-29), end, prev:[addDays(today,-59), addDays(today,-29)], label:"els darrers 30 dies", prevLabel:"els 30 anteriors"};
+  if(period === "q") return {start:addDays(mon,-84), end, prev:[addDays(mon,-175), addDays(mon,-84)], label:"les darreres 13 setmanes", prevLabel:"les 13 anteriors"};
+  const first = data.length ? sod(new Date(Math.min(...data.map(s => s.t0)))) : addDays(today,-29);
+  return {start:first, end, prev:null, label:"des del principi"};
+}
+const inR = (s, a, b) => s.t0 >= a.getTime() && s.t0 < b.getTime();
+function sumList(list){ return list.reduce((a,s) => { const t = tot(s); a.asana += t.asana; a.pranayama += t.pranayama; a.distracted += t.distracted; a.events += s.events.length; return a; }, {asana:0, pranayama:0, distracted:0, events:0}); }
+
+function niceTicks(maxMin){
+  const steps = [5,10,15,20,30,45,60,90,120,180,240,360,480,600,900,1200,1800,2400,3600,4800,6000];
+  const st = steps.find(s => maxMin/s <= 4) || Math.ceil(maxMin/240)*60;
+  const top = Math.max(st, Math.ceil(maxMin/st)*st), arr = [];
+  for(let v = st; v <= top; v += st) arr.push(v);
+  return {top, arr};
+}
+const tickLbl = m => m < 60 ? m+"m" : (m%60 ? Math.floor(m/60)+"h"+pad2(m%60) : (m/60)+"h");
+
+function buildBars(period, list, r){
+  const bars = [], today = sod(new Date());
+  const add = (label, full, a, b, isToday) => { const L = list.filter(s => inR(s, a, b)), t = sumList(L); bars.push({label, full, a:t.asana, p:t.pranayama, d:t.distracted, n:L.length, today:isToday}); };
+  const longDay = d => cap(fmtDate(d,{weekday:"long", day:"numeric", month:"short"}));
+  if(period === "day"){
+    const base = r.start.getTime(), H = Array.from({length:24}, () => ({a:0, p:0, d:0}));
+    list.filter(s => inR(s, r.start, r.end)).forEach(s => s.segs.forEach(([k,a,e]) => { let t = a; while(t < e){ const d = new Date(t), nx = new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours()+1).getTime(), en = Math.min(e, nx); if(t >= base && t < base + 864e5) H[d.getHours()][k === "asana" ? "a" : k === "pranayama" ? "p" : "d"] += en - t; t = en; } }));
+    const nowH = dayOff === 0 ? new Date().getHours() : -1;
+    H.forEach((o,h) => bars.push({label: h%3 === 0 ? h+" h" : "", full:`De ${h} a ${h+1} h`, a:o.a, p:o.p, d:o.d, n:0, today:h === nowH}));
+    return {bars, daily:false, unit:"hora"};
+  }
+  if(period === "week"){ for(let i=0;i<7;i++){ const d = addDays(r.start, i); add(DAYS[d.getDay()], longDay(d), d, addDays(d,1), dkey(d) === dkey(today)); } return {bars, daily:true}; }
+  if(period === "month"){ for(let i=0;i<30;i++){ const d = addDays(r.start, i); add(i%5 === 4 ? String(d.getDate()) : "", longDay(d), d, addDays(d,1), i === 29); } return {bars, daily:true}; }
+  if(period === "q"){ for(let i=0;i<13;i++){ const d = addDays(r.start, i*7); add(i%3 === 0 || i === 12 ? d.getDate()+"/"+(d.getMonth()+1) : "", "Setmana del "+fmtDate(d,{day:"numeric", month:"short"}), d, addDays(d,7), i === 12); } return {bars, daily:false, unit:"setmana"}; }
+  let m = new Date(today.getFullYear(), today.getMonth()-5, 1); const f = new Date(r.start.getFullYear(), r.start.getMonth(), 1); if(f < m) m = f;
+  while(m <= today){ const n = new Date(m.getFullYear(), m.getMonth()+1, 1); add(mon3(m), cap(fmtDate(m,{month:"long", year:"numeric"})), m, n, n > today); m = n; }
+  return {bars, daily:false, unit:"mes"};
+}
+function chartHTML(B){
+  const goal = B.daily ? settings.goal : 0;
+  const maxMin = Math.max(goal*1.15, ...B.bars.map(b => (b.a+b.p+b.d)/60000), 10);
+  const {top, arr} = niceTicks(maxMin), n = B.bars.length, gap = n > 20 ? "3px" : n > 10 ? "5px" : "10px";
+  return `<div class="chart" style="--n:${n}; --gap:${gap}">
+    <div class="plot">
+      <div class="gl" style="bottom:0"><em>0</em></div>${arr.map(v => `<div class="gl" style="bottom:${100*v/top}%"><em>${tickLbl(v)}</em></div>`).join("")}
+      ${goal ? `<div class="goal-l" style="bottom:${100*goal/top}%"><span>objectiu ${goal} min</span></div>` : ""}
+      <div class="bars">${B.bars.map((b,i) => { const tt = b.a+b.p+b.d; return `<button data-i="${i}" aria-label="${esc(b.full)}"><span class="stack" style="height:${100*tt/60000/top}%"><i class="a" style="flex:${b.a}"></i><i class="p" style="flex:${b.p}"></i><i class="d" style="flex:${b.d}"></i></span></button>`; }).join("")}</div>
+    </div>
+    <div class="xl">${B.bars.map(b => `<span class="${b.today ? "t" : ""}">${esc(b.label)}</span>`).join("")}</div>
+    <div class="readout" id="readout"></div>
+  </div>`;
+}
+function readout(b){
+  const pr = b.a + b.p;
+  return pr || b.d ? `<b>${esc(b.full)}</b> · ${dur(pr)} de pràctica (<span class="c-a">${dur(b.a)} asana</span>, <span class="c-p">${dur(b.p)} pranayama</span>) · <span class="c-d">${dur(b.d)} distret</span>${b.n > 1 ? " · "+b.n+" sessions" : ""}`
+    : `<b>${esc(b.full)}</b> · sense pràctica`;
+}
+function donutHTML(t){
+  const total = t.asana + t.pranayama + t.distracted, C = 2*Math.PI*54; let off = 0;
+  const arc = (v, col) => { if(!v || !total) return ""; const len = C*v/total, s = `<circle cx="68" cy="68" r="54" fill="none" stroke="${col}" stroke-width="16" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}"/>`; off += len; return s; };
+  return `<div class="donut-wrap"><div class="donut"><svg viewBox="0 0 136 136" aria-hidden="true"><circle cx="68" cy="68" r="54" fill="none" stroke="var(--surface-2)" stroke-width="16"/>
+      ${arc(t.asana,"var(--asana)")}${arc(t.pranayama,"var(--prana)")}${arc(t.distracted,"var(--dist)")}</svg>
+      <div class="ctr"><b>${pct(t.asana+t.pranayama, total)}%</b><span>focus</span></div></div>
+    <ul class="dl">
+      <li><i style="background:var(--asana)"></i><span>Asana</span><span>${dur(t.asana)} · ${pct(t.asana,total)}%</span></li>
+      <li><i style="background:var(--prana)"></i><span>Pranayama</span><span>${dur(t.pranayama)} · ${pct(t.pranayama,total)}%</span></li>
+      <li><i style="background:var(--dist)"></i><span>Distret</span><span>${dur(t.distracted)} · ${pct(t.distracted,total)}%</span></li>
+    </ul></div>`;
+}
+function hoursHTML(list){
+  const b = new Array(24).fill(0);
+  list.forEach(s => s.segs.forEach(([k,a,e]) => { if(!PRACT(k)) return; let t = a; while(t < e){ const d = new Date(t), nx = new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours()+1).getTime(), en = Math.min(e, nx); b[d.getHours()] += en - t; t = en; } }));
+  const max = Math.max(...b, 1), total = b.reduce((a,v) => a+v, 0);
+  let bi = 0, bv = -1; for(let h = 0; h < 24; h++){ const v = b[h] + b[(h+1)%24]; if(v > bv){ bv = v; bi = h; } }
+  const peak = new Set([bi, (bi+1)%24]);
+  const morning = b.slice(5,12).reduce((a,v) => a+v, 0), evening = b.slice(17,23).reduce((a,v) => a+v, 0);
+  return `<div class="hours" aria-hidden="true">${b.map((v,h) => `<i class="${v === 0 ? "zero" : peak.has(h) ? "peak" : ""}" style="height:${v ? Math.max(4, 100*v/max) : 3}%" title="${h} h · ${dur(v)}"></i>`).join("")}</div>
+    <div class="hours-x"><span>0 h</span><span>6 h</span><span>12 h</span><span>18 h</span></div>
+    ${total ? `<p class="insight">La teva franja forta és de ${bi} a ${(bi+2)%24} h. ${morning > evening*1.5 ? "Practiques sobretot al matí." : evening > morning*1.5 ? "Practiques sobretot a la tarda-vespre." : "Repartit entre matí i tarda."}</p>` : `<p class="empty">Sense dades en aquest període.</p>`}`;
+}
+function weekdayHTML(list, r){
+  const sums = new Array(7).fill(0), counts = new Array(7).fill(0), last = sod(new Date());
+  for(let d = new Date(r.start); d <= last; d = addDays(d,1)) counts[d.getDay()]++;
+  list.forEach(s => { sums[new Date(s.t0).getDay()] += tot(s).practice; });
+  const avg = sums.map((v,i) => counts[i] ? v/counts[i] : 0), max = Math.max(...avg, 1), best = avg.indexOf(Math.max(...avg));
+  return `<div class="rows">${[1,2,3,4,5,6,0].map(i => `<div class="hrow ${i === best && avg[i] ? "best" : ""}"><span>${cap(DAYS_LONG[i])}</span><span class="tr"><i style="width:${100*avg[i]/max}%; background:${i === best ? "var(--prana)" : "var(--asana)"}"></i></span><span class="val">${dur(avg[i])}</span></div>`).join("")}</div>
+    ${avg[best] ? `<p class="insight">Mitjana de pràctica per dia. El ${DAYS_LONG[best]} és el teu dia més fort.</p>` : ""}`;
+}
+function causesHTML(list, t){
+  const agg = {}; let longest = 0, auto = 0, n = 0;
+  list.forEach(s => s.events.forEach(e => { const c = e.cause || "Sense anotar", ms = e.end - e.start; (agg[c] ||= {ms:0, n:0}); agg[c].ms += ms; agg[c].n++; longest = Math.max(longest, ms); n++; if(e.type === "auto") auto++; }));
+  const rows = Object.entries(agg).sort((a,b) => b[1].ms - a[1].ms), max = rows.length ? rows[0][1].ms : 1;
+  const prH = (t.asana + t.pranayama)/3600e3, perHour = prH ? n/prH : 0;
+  return `<div class="facts f3">
+      <div><b>${n}</b>distraccions</div>
+      <div><b>${perHour.toFixed(1).replace(".",",")}</b>per hora de pràctica</div>
+      <div><b>${n ? secs(t.distracted/n) : "—"}</b>durada mitjana</div>
+      <div><b>${n ? secs(longest) : "—"}</b>la més llarga</div>
+      <div><b>${n ? pct(auto, n)+"%" : "—"}</b>sortint de l'app</div>
+      <div><b>${dur(t.distracted)}</b>temps total distret</div>
+    </div>
+    ${rows.length ? `<div class="rows">${rows.map(([c,v]) => `<div class="hrow"><span>${esc(c)}</span><span class="tr"><i style="width:${Math.max(3,100*v.ms/max)}%; background:var(--dist)"></i></span><span class="val">${dur(v.ms)} · ${v.n}×</span></div>`).join("")}</div>`
+      : `<p class="empty">Cap distracció en aquest període.</p>`}`;
+}
+function habitsHTML(list){
+  let longestRun = 0, firstSum = 0, firstN = 0, withP = 0, longestS = 0;
+  list.forEach(s => {
+    let run = 0, before = 0, seen = false;
+    s.segs.forEach(([k,a,b]) => { if(PRACT(k)){ run += b-a; longestRun = Math.max(longestRun, run); if(!seen) before += b-a; } else { run = 0; if(!seen){ seen = true; firstSum += before; firstN++; } } });
+    if(tot(s).pranayama > 0) withP++;
+    longestS = Math.max(longestS, tot(s).practice);
+  });
+  const n = list.length, t = sumList(list);
+  return `<div class="facts f3">
+    <div><b>${n}</b>sessions</div>
+    <div><b>${n ? dur((t.asana+t.pranayama)/n) : "—"}</b>durada mitjana</div>
+    <div><b>${n ? dur(longestS) : "—"}</b>sessió més llarga</div>
+    <div><b>${n ? dur(longestRun) : "—"}</b>tram més llarg sense distreure't</div>
+    <div><b>${firstN ? dur(firstSum/firstN) : "—"}</b>fins a la primera distracció</div>
+    <div><b>${n ? pct(withP, n)+"%" : "—"}</b>sessions amb pranayama</div>
+  </div>`;
+}
+function heatHTML(list){
+  const today = sod(new Date()), start = addDays(mondayOf(today), -84), m = {}, goal = settings.goal*60000;
+  list.forEach(s => { const k = dkey(new Date(s.t0)); m[k] = (m[k]||0) + tot(s).practice; });
+  let html = `<span></span>`, prevM = -1;
+  for(let w = 0; w < 13; w++){ const d = addDays(start, w*7), mm = d.getMonth(); html += `<span class="ml">${mm !== prevM ? mon3(d) : ""}</span>`; prevM = mm; }
+  for(let r = 0; r < 7; r++){
+    html += `<span class="wl">${["dl","","dc","","dv","","dg"][r]}</span>`;
+    for(let w = 0; w < 13; w++){
+      const d = addDays(start, w*7 + r), k = dkey(d), v = m[k] || 0;
+      const lv = d > today ? "fut" : !v ? "" : v < goal/2 ? "l1" : v < goal ? "l2" : "l3";
+      html += `<span class="c ${lv} ${k === dkey(today) ? "tod" : ""}" title="${d.getDate()}/${d.getMonth()+1} · ${dur(v)}"></span>`;
+    }
+  }
+  return `<div class="heat">${html}</div>
+    <div class="heat-key">Gens <i style="background:var(--h0)"></i><i style="background:var(--h1)"></i><i style="background:var(--h2)"></i><i style="background:var(--h3)"></i> Objectiu complert</div>`;
+}
+function sessionsHTML(list, isEx){
+  const L = list.slice().sort((a,b) => b.t0 - a.t0).slice(0, 12);
+  if(!L.length) return `<p class="empty">Cap sessió en aquest període.</p>`;
+  return `<ul class="sessions">${L.map(s => {
+    const d = new Date(s.t0), t = tot(s);
+    return `<li><details><summary>
+      <span class="sd"><b>${d.getDate()}</b>${mon3(d)} · ${pad2(d.getHours())}:${pad2(d.getMinutes())}</span>
+      <span class="sb"><span class="st"><b>${dur(t.practice)}</b><span class="c-a">${dur(t.asana)} asana</span>${t.pranayama ? `<span class="c-p">${dur(t.pranayama)} pranayama</span>` : ""}<span class="c-d">${t.distracted ? dur(t.distracted)+" distret · "+s.events.length+"×" : "sense distraccions"}</span></span>
+        <span class="bar">${timelineInner(s.segs)}</span>${s.note ? `<span class="sn">${esc(s.note)}</span>` : ""}</span>
+    </summary>
+    ${isEx ? `<div class="s-body"><span class="small-muted">Sessió d'exemple.</span></div>` : `<div class="s-body"><textarea class="note" data-note="${s.id}" placeholder="Afegeix una nota">${esc(s.note||"")}</textarea>
+      <div class="row-actions"><button class="linkish danger" data-del="${s.id}">Esborra aquesta sessió</button></div></div>`}
+    </details></li>`; }).join("")}</ul>`;
+}
+
+function renderStats(){
+  const isEx = sessions.length === 0;
+  const data = isEx ? (SAMPLE ||= sample()) : sessions;
+  const per = settings.period, r = range(per, data);
+  const list = data.filter(s => inR(s, r.start, r.end));
+  const t = sumList(list), pr = t.asana + t.pranayama;
+  const dayM = {}; list.forEach(s => { const k = dkey(new Date(s.t0)); dayM[k] = (dayM[k]||0) + tot(s).practice; });
+  const daysPracticed = Object.values(dayM).filter(v => v >= 60000).length;
+  const goalDays = Object.values(dayM).filter(v => v >= settings.goal*60000).length;
+  const daysInRange = Math.max(1, Math.round((Math.min(r.end, addDays(sod(new Date()),1)) - r.start)/864e5));
+  let delta = "";
+  if(r.prev){ const pv = sumList(data.filter(s => inR(s, r.prev[0], r.prev[1]))), pp = pv.asana + pv.pranayama;
+    if(pp > 0){ const d = pr - pp, pc = Math.round(100*d/pp); delta = `<span class="${d >= 0 ? "up" : "down"}">${d >= 0 ? "▲" : "▼"} ${Math.abs(pc)}%</span> vs ${r.prevLabel}`; } }
+  const st = streaks(data), B = buildBars(per, data, r);
+  const P = [["day","Dia"],["week","Setmana"],["month","30 dies"],["q","3 mesos"],["all","Tot"]];
+
+  $("#stats").innerHTML = `
+    <div class="stats-head"><h2>Estadístiques</h2>
+      <span class="seg" role="radiogroup" aria-label="Període">${P.map(([v,l]) => `<input type="radio" name="per" id="per-${v}" value="${v}" ${per === v ? "checked" : ""}><label for="per-${v}">${l}</label>`).join("")}</span></div>
+    ${per === "day" ? `<div class="daynav"><button class="icon-btn" id="dPrev" aria-label="Dia anterior">‹</button><b>${cap(fmtDate(r.start,{weekday:"long", day:"numeric", month:"long"}))}${dayOff === 0 ? " · avui" : dayOff === 1 ? " · ahir" : ""}</b><button class="icon-btn" id="dNext" aria-label="Dia següent" ${dayOff === 0 ? "disabled" : ""}>›</button></div>` : ""}
+    ${isEx ? `<div class="example"><b>Exemple</b><span>Així es veuran les teves estadístiques. Són dades inventades i desapareixen quan desis la primera sessió.</span></div>` : ""}
+
+    <div class="kpis">
+      <div class="kpi"><span class="k">Pràctica</span><span class="v">${durHTML(pr)}</span><span class="s">${delta || cap(r.label)}</span></div>
+      <div class="kpi"><span class="k"><i style="background:var(--asana)"></i>Asana</span><span class="v">${durHTML(t.asana)}</span><span class="s">${pct(t.asana, pr)}% de la pràctica</span></div>
+      <div class="kpi"><span class="k"><i style="background:var(--prana)"></i>Pranayama</span><span class="v">${durHTML(t.pranayama)}</span><span class="s">${pct(t.pranayama, pr)}% de la pràctica</span></div>
+      <div class="kpi"><span class="k"><i style="background:var(--dist)"></i>Distret</span><span class="v">${durHTML(t.distracted)}</span><span class="s">${t.events} ${t.events === 1 ? "distracció" : "distraccions"}</span></div>
+      <div class="kpi"><span class="k">Focus</span><span class="v">${pct(pr, pr+t.distracted)}<small>%</small></span><span class="s">temps present sobre el total</span></div>
+      <div class="kpi"><span class="k">Dies practicats</span><span class="v">${daysPracticed}<small>de ${daysInRange}</small></span><span class="s">${per === "day" ? (daysPracticed ? "objectiu: "+pct(pr, settings.goal*60000)+"% fet" : "sense pràctica") : "mitjana de "+dur(pr/daysInRange)+" al dia"}</span></div>
+    </div>
+
+    <div class="block">
+      <div class="block-head"><h3>${B.daily ? "Dia a dia" : B.unit === "hora" ? "Hora a hora" : B.unit === "setmana" ? "Setmana a setmana" : "Mes a mes"}</h3>
+        <div class="legend"><span><i style="background:var(--asana)"></i>Asana</span><span><i style="background:var(--prana)"></i>Pranayama</span><span><i style="background:var(--dist)"></i>Distret</span></div></div>
+      ${chartHTML(B)}
+    </div>
+
+    <div class="two">
+      <div class="block"><h3>Constància</h3>
+        <div class="facts">
+          <div><b>${st.current} ${st.current === 1 ? "dia" : "dies"}</b>ratxa actual</div>
+          <div><b>${st.best} ${st.best === 1 ? "dia" : "dies"}</b>millor ratxa</div>
+          <div><b>${goalDays}</b>dies amb l'objectiu</div>
+          <div><b>${pct(daysPracticed, daysInRange)}%</b>dels dies amb pràctica</div>
+        </div>
+        ${heatHTML(data)}
+      </div>
+      <div class="block"><h3>Repartiment</h3>${donutHTML(t)}</div>
+    </div>
+
+    <div class="two" ${per === "day" ? "hidden" : ""}>
+      <div class="block"><h3>Quan practiques</h3>${hoursHTML(list)}</div>
+      <div class="block"><h3>Per dia de la setmana</h3>${weekdayHTML(list, r)}</div>
+    </div>
+
+    <div class="block"><h3>Què et distreu</h3>${causesHTML(list, t)}</div>
+    <div class="block"><h3>Hàbits de sessió</h3>${habitsHTML(list)}</div>
+    <div class="block"><h3>Sessions</h3>${sessionsHTML(list, isEx)}</div>`;
+
+  const dp = $("#dPrev"), dn = $("#dNext");
+  if(dp){ dp.onclick = () => { dayOff++; renderStats(); }; dn.onclick = () => { if(dayOff > 0){ dayOff--; renderStats(); } }; }
+  document.querySelectorAll('input[name="per"]').forEach(x => x.onchange = () => { dayOff = 0; settings.period = x.value; store.set("settings", settings); renderStats(); });
+  const btns = document.querySelectorAll(".bars button"), ro = $("#readout");
+  const sel = i => { btns.forEach(b => b.classList.toggle("sel", +b.dataset.i === i)); ro.innerHTML = readout(B.bars[i]); };
+  btns.forEach(b => b.onclick = () => sel(+b.dataset.i));
+  let def = B.bars.findIndex(b => b.today);
+  if(def < 0 || (B.unit === "hora" && !(B.bars[def].a + B.bars[def].p + B.bars[def].d))){ let mx = -1; B.bars.forEach((b,i) => { const v = b.a+b.p+b.d; if(v > mx){ mx = v; def = i; } }); if(B.unit !== "hora" && mx <= 0) def = B.bars.length-1; }
+  sel(def);
+  document.querySelectorAll("[data-note]").forEach(ta => ta.onchange = () => { const s = sessions.find(x => x.id === ta.dataset.note); if(s){ s.note = ta.value.slice(0,280); store.set("sessions", sessions); } });
+  document.querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
+    if(b.dataset.armed){ sessions = sessions.filter(s => s.id !== b.dataset.del); store.set("sessions", sessions); renderStats(); renderLive(true); toast("Sessió esborrada"); return; }
+    b.dataset.armed = "1"; b.textContent = "Toca de nou per esborrar"; setTimeout(() => { if(b.isConnected){ delete b.dataset.armed; b.textContent = "Esborra aquesta sessió"; } }, 3500);
+  });
+}
+
+/* =================== ajustos =================== */
+function sheet(html, bind){
+  const host = $("#sheetHost");
+  host.innerHTML = `<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`;
+  $("#scrim").onclick = e => { if(e.target.id === "scrim") host.innerHTML = ""; };
+  bind(() => host.innerHTML = "");
+}
+const swRow = (id, label, sub, on) => `<label class="srow" for="${id}"><span>${label}<small>${sub}</small></span><span class="sw"><input type="checkbox" id="${id}" ${on?"checked":""}><i></i></span></label>`;
+const segRow = (name, label, sub, opts, cur) => `<div class="srow"><span>${label}<small>${sub}</small></span><span class="seg">${opts.map(([v,l]) => `<input type="radio" name="${name}" id="${name}-${v}" value="${v}" ${cur == v ? "checked" : ""}><label for="${name}-${v}">${l}</label>`).join("")}</span></div>`;
+$("#openSettings").onclick = () => sheet(`<h3>Ajustos</h3><div>
+    ${segRow("goal","Objectiu diari","Minuts de pràctica al dia, per a les estadístiques",[[15,"15"],[20,"20"],[30,"30"],[45,"45"],[60,"60"]], settings.goal)}
+    ${segRow("interval","Campana de presència","Sona cada tants minuts de pràctica",[[0,"No"],[5,"5"],[10,"10"],[15,"15"]], settings.interval)}
+    ${swRow("s-away","Sortir de l'app compta com a distret","Si bloqueges el mòbil o canvies d'app mentre practiques", settings.autoAway)}
+    ${swRow("s-cause","Preguntar què t'ha distret","Mostra els motius mentre estàs distret", settings.askCause)}
+  </div>
+  <div class="block" style="gap:8px; margin-top:6px"><span class="lbl">Les teves dades</span>
+    <div class="row-actions" style="justify-content:flex-start"><button class="btn btn-ghost" id="copyD">Copia les dades</button><button class="btn btn-ghost" id="impD">Importa</button></div>
+    <div id="dataArea"></div></div>
+  <div class="row-actions" style="justify-content:space-between; margin-top:8px"><button class="linkish danger" id="wipe">Esborra tot l'historial</button><button class="btn" id="closeS">Fet</button></div>`,
+  close => {
+    const save = () => { store.set("settings", settings); renderLive(true); renderStats(); };
+    $("#s-away").onchange = e => { settings.autoAway = e.target.checked; save(); };
+    $("#s-cause").onchange = e => { settings.askCause = e.target.checked; save(); };
+    document.querySelectorAll('input[name="goal"]').forEach(x => x.onchange = () => { settings.goal = +x.value; save(); });
+    document.querySelectorAll('input[name="interval"]').forEach(x => x.onchange = () => { settings.interval = +x.value; save(); });
+    $("#closeS").onclick = close;
+    $("#copyD").onclick = () => {
+      const txt = JSON.stringify(sessions.map(({_t, ...s}) => s));
+      const fallback = () => { $("#dataArea").innerHTML = `<textarea class="data-box" id="dataBox" readonly></textarea><span class="small-muted">Selecciona el text i copia'l.</span>`; const b = $("#dataBox"); b.value = txt; b.select(); };
+      try{ navigator.clipboard.writeText(txt).then(() => toast(`${sessions.length} sessions copiades`), fallback); }catch(e){ fallback(); }
+    };
+    $("#impD").onclick = () => {
+      $("#dataArea").innerHTML = `<textarea class="data-box" id="impBox" placeholder="Enganxa aquí les dades copiades"></textarea><div class="row-actions"><button class="btn" id="impGo">Importa les sessions</button></div>`;
+      $("#impGo").onclick = () => {
+        try{ const arr = JSON.parse($("#impBox").value); if(!Array.isArray(arr)) throw 0;
+          const ids = new Set(sessions.map(s => s.id)); let n = 0;
+          arr.forEach(s => { if(s && s.id && Array.isArray(s.segs) && Array.isArray(s.events) && !ids.has(s.id)){ sessions.push(s); n++; } });
+          sessions.sort((a,b) => a.t0 - b.t0); store.set("sessions", sessions); renderLive(true); renderStats(); toast(`${n} sessions importades`); close();
+        }catch(e){ $("#dataArea").insertAdjacentHTML("beforeend", `<span class="small-muted danger">Aquest text no són dades de Samyama Pràctica. Torna-les a copiar des dels ajustos.</span>`); }
+      };
+    };
+    $("#wipe").onclick = () => sheet(`<h3>Esborrar tot l'historial?</h3><p style="margin:0;color:var(--muted)">Es perdran totes les sessions desades en aquest navegador. Si vols, copia abans les dades.</p>
+      <div class="row-actions"><button class="btn btn-ghost" id="no">Cancel·la</button><button class="btn" id="yes">Esborra</button></div>`,
+      c2 => { $("#no").onclick = c2; $("#yes").onclick = () => { sessions = []; store.set("sessions", sessions); c2(); $("#summary").hidden = true; renderLive(true); renderStats(); }; });
+  });
+
+recover();
+renderLive(true);
+renderStats();
+if("serviceWorker" in navigator){ window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {})); }
+</script>
+</body>
+</html>
