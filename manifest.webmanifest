@@ -1,9 +1,9 @@
 {
-  "name": "Samyama Pràctica",
-  "short_name": "Pràctica",
-  "description": "Registre de pràctica de ioga: asana, pranayama i temps distret.",
+  "name": "Sthira: Yoga Timer & Tracker",
+  "short_name": "Sthira",
+  "description": "Temporitzador i registre de pràctica de ioga en català, castellà i anglès: asana, pranayama i temps distret, amb estadístiques.",
   "lang": "ca",
-  "id": "./",
+  "id": "/sthira",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -11,8 +11,29 @@
   "background_color": "#F3F7FB",
   "theme_color": "#3A8BD2",
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
-  ]
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": [
+    "health",
+    "fitness",
+    "lifestyle"
+  ],
+  "dir": "ltr"
 }

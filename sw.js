@@ -1,6 +1,6 @@
 /* Samyama Pràctica — service worker: funciona sense connexió */
-const VERSION = "practica-v4";
-const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/maskable-512.png", "./icons/apple-touch-icon.png"];
+const VERSION = "practica-v10";
+const SHELL = ["./", "./index.html", "./privacy.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/maskable-512.png", "./icons/apple-touch-icon.png", "./fonts/cormorant-garamond-latin-400-italic.woff2", "./fonts/cormorant-garamond-latin-400-normal.woff2", "./fonts/cormorant-garamond-latin-500-italic.woff2", "./fonts/cormorant-garamond-latin-500-normal.woff2", "./fonts/cormorant-garamond-latin-600-italic.woff2", "./fonts/cormorant-garamond-latin-600-normal.woff2", "./fonts/cormorant-garamond-latin-ext-400-italic.woff2", "./fonts/cormorant-garamond-latin-ext-400-normal.woff2", "./fonts/cormorant-garamond-latin-ext-500-italic.woff2", "./fonts/cormorant-garamond-latin-ext-500-normal.woff2", "./fonts/cormorant-garamond-latin-ext-600-italic.woff2", "./fonts/cormorant-garamond-latin-ext-600-normal.woff2", "./fonts/fonts.css", "./fonts/jost-latin-400-normal.woff2", "./fonts/jost-latin-500-normal.woff2", "./fonts/jost-latin-600-normal.woff2", "./fonts/jost-latin-ext-400-normal.woff2", "./fonts/jost-latin-ext-500-normal.woff2", "./fonts/jost-latin-ext-600-normal.woff2"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -10,16 +10,13 @@ self.addEventListener("activate", e => {
 });
 self.addEventListener("fetch", e => {
   const req = e.request;
-  if(req.method !== "GET") return;
-  const url = new URL(req.url);
-  // la pàgina: primer xarxa (per rebre actualitzacions), si no hi ha connexió, la còpia guardada
+  if(req.method !== "GET" || new URL(req.url).origin !== location.origin) return;
+  // pàgines: primer xarxa (per rebre actualitzacions); sense connexió, la còpia guardada
   if(req.mode === "navigate"){
-    e.respondWith(fetch(req).then(r => { const cp = r.clone(); caches.open(VERSION).then(c => c.put("./index.html", cp)); return r; })
-      .catch(() => caches.match("./index.html")));
+    e.respondWith(fetch(req).then(r => { const cp = r.clone(); caches.open(VERSION).then(c => c.put(req, cp)); return r; })
+      .catch(() => caches.match(req).then(hit => hit || caches.match("./index.html"))));
     return;
   }
-  // fonts de Google i fitxers propis: primer la còpia guardada
-  if(url.origin === location.origin || url.hostname.endsWith("fonts.googleapis.com") || url.hostname.endsWith("fonts.gstatic.com")){
-    e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(r => { if(r.ok || r.type === "opaque"){ const cp = r.clone(); caches.open(VERSION).then(c => c.put(req, cp)); } return r; })));
-  }
+  // fitxers: primer la còpia guardada
+  e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(r => { if(r.ok){ const cp = r.clone(); caches.open(VERSION).then(c => c.put(req, cp)); } return r; })));
 });
