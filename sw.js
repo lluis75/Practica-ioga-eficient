@@ -1,5 +1,5 @@
 /* Samyama Pràctica — service worker: funciona sense connexió */
-const VERSION = "practica-v10";
+const VERSION = "practica-v11";
 const SHELL = ["./", "./index.html", "./privacy.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/maskable-512.png", "./icons/apple-touch-icon.png", "./fonts/cormorant-garamond-latin-400-italic.woff2", "./fonts/cormorant-garamond-latin-400-normal.woff2", "./fonts/cormorant-garamond-latin-500-italic.woff2", "./fonts/cormorant-garamond-latin-500-normal.woff2", "./fonts/cormorant-garamond-latin-600-italic.woff2", "./fonts/cormorant-garamond-latin-600-normal.woff2", "./fonts/cormorant-garamond-latin-ext-400-italic.woff2", "./fonts/cormorant-garamond-latin-ext-400-normal.woff2", "./fonts/cormorant-garamond-latin-ext-500-italic.woff2", "./fonts/cormorant-garamond-latin-ext-500-normal.woff2", "./fonts/cormorant-garamond-latin-ext-600-italic.woff2", "./fonts/cormorant-garamond-latin-ext-600-normal.woff2", "./fonts/fonts.css", "./fonts/jost-latin-400-normal.woff2", "./fonts/jost-latin-500-normal.woff2", "./fonts/jost-latin-600-normal.woff2", "./fonts/jost-latin-ext-400-normal.woff2", "./fonts/jost-latin-ext-500-normal.woff2", "./fonts/jost-latin-ext-600-normal.woff2"];
 
 self.addEventListener("install", e => {
