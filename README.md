@@ -21,7 +21,7 @@ App web instal·lable (PWA) que funciona sense connexió.
 ## Actualitzar-la
 
 Puja el nou `index.html` al repositori. Per assegurar-te que el mòbil rep la versió nova,
-canvia també el número de `practica-v14` a `sw.js` (per exemple, a `practica-v15`).
+canvia també el número de `practica-v17` a `sw.js` (per exemple, a `practica-v18`).
 Tanca l'app i torna-la a obrir dues vegades.
 
 ## Les dades i les còpies de seguretat
