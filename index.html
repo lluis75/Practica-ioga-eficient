@@ -138,6 +138,10 @@ button{cursor:pointer}
 .hrow.sub span:first-child{padding-left:14px; font-size:.84rem; color:var(--muted)}
 .hrow.sub .tr{height:7px}
 .hrow.sub .tr i{opacity:.6}
+.chips.fam button{display:inline-flex; align-items:baseline; gap:6px}
+.chips.fam .fc{font-size:.8em; font-variant-numeric:lining-nums tabular-nums; color:var(--asana); font-weight:600}
+.chips.fam .fc:empty{display:none}
+.chips.fam button[aria-pressed="true"] .fc{color:var(--on-color)}
 .chips.fam button[aria-pressed="true"]{background:var(--asana); border-color:var(--asana); color:var(--on-color)}
 .adv-note{margin:0}
 #viewT .adv{margin-top:0}
@@ -533,8 +537,8 @@ const NAMES = {asana:"Asana", pranayama:"Pranayama", get study(){ return tx("Est
 // sortir de l'app només compta com a temps perdut en asana i pranayama; l'estudi continua comptant
 const AWAYK = k => k === "asana" || k === "pranayama";
 const FAMS = ["standing","forward","back","inv","seated","supine","other"];
-const FAM_CA = {standing:"Dretes", forward:"Endavant", back:"Endarrere", inv:"Invertides", seated:"Assegudes", supine:"Supines", other:"Altres postures", "inv.sirsa":"Sirsasana", "inv.sarva":"Sarvangasana", "inv.other":"Altres invertides"};
-const SUBS = {inv:["inv.sirsa","inv.sarva","inv.other"]};
+const FAM_CA = {standing:"Dretes", forward:"Endavant", back:"Endarrere", inv:"Invertides", seated:"Assegudes", supine:"Supines", other:"Altres postures", "inv.sirsa":"Sirsasana", "inv.sarva":"Sarvangasana", "inv.setu":"Setu Bandha", "inv.other":"Altres invertides"};
+const SUBS = {inv:["inv.sirsa","inv.sarva","inv.setu","inv.other"]};
 const famName = f => f ? tx(FAM_CA[f] || f) : tx("Sense especificar");
 const famTop = f => (f || "").split(".")[0];
 /* files per a estadístiques: grups principals i, a sota, les subcategories */
@@ -597,8 +601,8 @@ function setFam(f){
 }
 function famChipsHTML(){
   const cur = S && S.cur.kind === "asana" ? (S.cur.fam || "") : "", ct = famTop(cur);
-  let h = `<div class="chips fam">${FAMS.map(f => `<button type="button" data-fam="${f}" aria-pressed="${ct === f}">${tx(FAM_CA[f])}</button>`).join("")}</div>`;
-  if(SUBS[ct]) h += `<div class="fam-sub"><span class="lbl">${tx(FAM_CA[ct])}</span><div class="chips fam">${SUBS[ct].map(x => `<button type="button" data-fam="${x}" aria-pressed="${cur === x}">${tx(FAM_CA[x])}</button>`).join("")}</div></div>`;
+  let h = `<div class="chips fam">${FAMS.map(f => `<button type="button" data-fam="${f}" aria-pressed="${ct === f}"><span>${tx(FAM_CA[f])}</span><span class="fc" data-fc="${f}"></span></button>`).join("")}</div>`;
+  if(SUBS[ct]) h += `<div class="fam-sub"><span class="lbl">${tx(FAM_CA[ct])}</span><div class="chips fam">${SUBS[ct].map(x => `<button type="button" data-fam="${x}" aria-pressed="${cur === x}"><span>${tx(FAM_CA[x])}</span><span class="fc" data-fc="${x}"></span></button>`).join("")}</div></div>`;
   return h;
 }
 function renderFam(){
@@ -611,6 +615,7 @@ function renderFam(){
     box.querySelector(".adv-cur").textContent = (S.cur.fam || "").includes(".") ? famName(famTop(S.cur.fam)) + " · " + famName(S.cur.fam) : famName(S.cur.fam || "");
     const body = box.querySelector(".adv-body");
     body.innerHTML = famChipsHTML() + `<p class="small-muted adv-note">${tx("Marca quin tipus de postures fas. El temps d'asana es guarda per tipus. Toca'l un altre cop per desmarcar-lo.")}</p>`;
+    updateFamCounters();
     body.querySelectorAll("[data-fam]").forEach(b => b.onclick = () => {
       const f = b.dataset.fam, cur = S.cur.fam || "";
       if(f.includes(".")) setFam(cur === f ? famTop(f) : f);
@@ -618,18 +623,26 @@ function renderFam(){
     });
   });
 }
+function updateFamCounters(){
+  const box = $("#advP"); if(!box || box.hidden || !S) return;
+  const m = famTotals([{segs:liveSegs()}]), top = {};
+  Object.entries(m).forEach(([k,v]) => { const t = famTop(k); top[t] = (top[t] || 0) + v; });
+  box.querySelectorAll("[data-fc]").forEach(el => { const k = el.dataset.fc, v = k.includes(".") ? (m[k] || 0) : (top[k] || 0); el.textContent = v >= 1000 ? clock(v) : ""; });
+}
 function famTotals(list){ const m = {}; list.forEach(s => s.segs.forEach(sg => { if(sg[0] !== "asana") return; const f = sg[3] || ""; m[f] = (m[f] || 0) + sg[2] - sg[1]; })); return m; }
 
 /* =================== so i pantalla =================== */
 let actx = null, master = null;
 function audio(){ try{ if(!actx){ actx = new (window.AudioContext||window.webkitAudioContext)(); master = actx.createGain(); master.gain.value = .9; master.connect(actx.destination); } if(actx.state === "suspended") actx.resume(); return actx; }catch(e){ return null; } }
-function bell(str = 1, v = 1){
-  const ctx = audio(); if(!ctx) return; const t = ctx.currentTime;
+let SCHED = [], keepOsc = null;
+function reg(o, at){ if(at !== undefined) SCHED.push({o, at}); }
+function bell(str = 1, v = 1, at){
+  const ctx = audio(); if(!ctx) return; const t = at !== undefined ? at : ctx.currentTime;
   [[1,1,5],[1.004,.6,5],[2.71,.45,3.2],[5.15,.22,2],[8.6,.1,1.2]].forEach(([r,g,d]) => {
     const o = ctx.createOscillator(), gn = ctx.createGain(), len = d*(.55+.45*str);
     o.type = "sine"; o.frequency.value = 392*r;
     gn.gain.setValueAtTime(.0001, t); gn.gain.exponentialRampToValueAtTime(.22*g*str*v, t+.012); gn.gain.exponentialRampToValueAtTime(.0001, t+len);
-    o.connect(gn); gn.connect(master); o.start(t); o.stop(t+len+.05);
+    o.connect(gn); gn.connect(master); o.start(t); o.stop(t+len+.05); reg(o, at);
   });
 }
 let wake = null;
@@ -698,8 +711,8 @@ function recover(){
 document.addEventListener("visibilitychange", () => {
   if(!S) return;
   if(document.hidden){
-    if(settings.autoAway && AWAYK(S.cur.kind)){ switchTo("distracted", "auto"); S.away = S.cur.start; saveLive(); }
-  } else { wake = null; keepAwake(); renderLive(true); }
+    if(settings.autoAway && AWAYK(S.cur.kind) && !T.running){ switchTo("distracted", "auto"); S.away = S.cur.start; saveLive(); }
+  } else { wake = null; keepAwake(); if(T.running) schedTimer(); renderLive(true); }
 });
 setInterval(() => { if(S && !document.hidden) saveLive(); }, 5000);
 
@@ -721,7 +734,7 @@ function renderLive(full){
     $("#split").innerHTML = `<span class="c-a"><b>${clock(t.asana)}</b> asana</span><span class="c-p"><b>${clock(t.pranayama)}</b> pranayama</span>${t.study ? `<span class="c-s"><b>${clock(t.study)}</b> ${tx("estudi")}</span>` : ""}<span class="c-d"><b>${clock(t.distracted)}</b> ${tx("distret")} · ${S.events.length + (S.open ? 1 : 0)}×</span>${t.pause ? `<span class="c-x"><b>${clock(t.pause)}</b> ${tx("pausa")}</span>` : ""}`;
     $("#nowBar").innerHTML = timelineInner(segs);
     $("#tA").textContent = clock(t.asana); $("#tP").textContent = clock(t.pranayama);
-    $("#tD").textContent = clock(t.distracted); $("#tE").textContent = clock(t.study);
+    $("#tD").textContent = clock(t.distracted); $("#tE").textContent = clock(t.study); updateFamCounters();
     if(settings.interval && PRACT(k)){ const n = Math.floor(t.practice/(settings.interval*60000)); if(n > (S.lastBell||0)){ S.lastBell = n; bell(.45); } }
     if(full){
       $("#streak").textContent = "";
@@ -1189,7 +1202,7 @@ function renderStats(){
       <div class="kpi"><span class="k">${tx("Sessions")}</span><span class="v">${list.length}</span><span class="s">${list.length ? tx("{d} de mitjana", {d:dur(pr/list.length)}) : tx("sense pràctica")}</span></div>
     </div>
 
-    <div class="block">
+    <div class="block" ${per === "day" ? "hidden" : ""}>
       <div class="block-head"><h3>${tx(B.daily ? "Dia a dia" : B.unit === "hora" ? "Hora a hora" : B.unit === "setmana" ? "Setmana a setmana" : "Mes a mes")}</h3>
         <div class="legend"><span><i style="background:var(--asana)"></i>Asana</span><span><i style="background:var(--prana)"></i>Pranayama</span><span><i style="background:var(--study)"></i>${tx("Estudi")}</span><span><i style="background:var(--dist)"></i>${tx("Distret")}</span></div></div>
       ${chartHTML(B)}
@@ -1230,7 +1243,7 @@ function renderStats(){
   btns.forEach(b => b.onclick = () => sel(+b.dataset.i));
   let def = B.bars.findIndex(b => b.today);
   if(def < 0 || (B.unit === "hora" && !(B.bars[def].a + B.bars[def].p + B.bars[def].d))){ let mx = -1; B.bars.forEach((b,i) => { const v = b.a+b.p+b.d; if(v > mx){ mx = v; def = i; } }); if(B.unit !== "hora" && mx <= 0) def = B.bars.length-1; }
-  sel(def);
+  if(per !== "day") sel(def);
   document.querySelectorAll("[data-note]").forEach(ta => ta.onchange = () => { const s = sessions.find(x => x.id === ta.dataset.note); if(s){ s.note = ta.value.slice(0,280); store.set("sessions", sessions); } });
   document.querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
     if(b.dataset.armed){ sessions = sessions.filter(s => s.id !== b.dataset.del); store.set("sessions", sessions); renderStats(); renderLive(true); toast(tx("Sessió esborrada")); return; }
@@ -1339,21 +1352,21 @@ let TS = Object.assign({interval:60, custom:90, sound:"bowl", volume:75, vibrate
 const T = {paused:false, running:false, acc:0, start:0, count:0, warned:-1, done:false};
 const saveT = () => store.set("timer", TS);
 const PRESETS = [30,60,120,180,300];
-const tEl = () => T.acc + (T.running ? performance.now() - T.start : 0);
+const tEl = () => T.acc + (T.running ? Date.now() - T.start : 0);
 const ivLabel = s => { const m = Math.floor(s/60), r = s%60; return !m ? r+" s" : r ? m+":"+pad2(r) : m+" min"; };
 const ivLong = s => { const m = Math.floor(s/60), r = s%60; return !m ? r+" s" : r ? `${m} min ${r} s` : `${m} min`; };
 
 function vol(){ return TS.volume/100; }
-function wood(v = 1){
-  const ctx = audio(); if(!ctx) return; const t = ctx.currentTime;
+function wood(v = 1, at){
+  const ctx = audio(); if(!ctx) return; const t = at !== undefined ? at : ctx.currentTime;
   [[820,1],[1260,.5],[2100,.18]].forEach(([f,g]) => { const o = ctx.createOscillator(), gn = ctx.createGain(); o.type = "triangle"; o.frequency.value = f;
     gn.gain.setValueAtTime(.0001, t); gn.gain.exponentialRampToValueAtTime(.5*g*v*vol(), t+.004); gn.gain.exponentialRampToValueAtTime(.0001, t+.22);
-    o.connect(gn); gn.connect(master); o.start(t); o.stop(t+.25); });
+    o.connect(gn); gn.connect(master); o.start(t); o.stop(t+.25); reg(o, at); });
 }
-function beep(v = 1){
-  const ctx = audio(); if(!ctx) return; const t = ctx.currentTime, o = ctx.createOscillator(), gn = ctx.createGain();
+function beep(v = 1, at){
+  const ctx = audio(); if(!ctx) return; const t = at !== undefined ? at : ctx.currentTime, o = ctx.createOscillator(), gn = ctx.createGain();
   o.type = "sine"; o.frequency.value = 880; gn.gain.setValueAtTime(.0001, t); gn.gain.exponentialRampToValueAtTime(.35*v*vol(), t+.01);
-  gn.gain.setValueAtTime(.35*v*vol(), t+.16); gn.gain.exponentialRampToValueAtTime(.0001, t+.24); o.connect(gn); gn.connect(master); o.start(t); o.stop(t+.26);
+  gn.gain.setValueAtTime(.35*v*vol(), t+.16); gn.gain.exponentialRampToValueAtTime(.0001, t+.24); o.connect(gn); gn.connect(master); o.start(t); o.stop(t+.26); reg(o, at);
 }
 function signal(strength = 1){
   audio();
@@ -1362,26 +1375,56 @@ function signal(strength = 1){
   else { beep(strength); }
   if(TS.vibrate){ try{ navigator.vibrate && navigator.vibrate(strength >= 1 ? [220] : [60]); }catch(e){} }
 }
+function soundAt(strength, at){
+  if(TS.sound === "bowl") bell(strength, Math.min(1.2, vol()*1.2), at);
+  else if(TS.sound === "wood"){ wood(strength, at); wood(strength*.8, at + .18); }
+  else beep(strength, at);
+}
+function warnAt(at){ if(TS.sound === "beep") beep(.3, at); else wood(.35, at); }
+/* Els senyals es programen per avançat al rellotge d'àudio, perquè sonin encara que la pantalla estigui bloquejada. */
+function unschedTimer(){
+  const now = actx ? actx.currentTime : 0;
+  SCHED.forEach(({o, at}) => { if(at > now + .02){ try{ o.stop(0); }catch(e){} } });
+  SCHED = [];
+  if(keepOsc){ try{ keepOsc.stop(0); }catch(e){} keepOsc = null; }
+}
+function schedTimer(){
+  unschedTimer();
+  if(!T.running) return;
+  const ctx = audio(); if(!ctx) return;
+  // to gairebé inaudible perquè el mòbil no adormi l'àudio mentre el temporitzador corre
+  try{ const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = 30; g.gain.value = .0015; o.connect(g); g.connect(ctx.destination); o.start(); keepOsc = o; }catch(e){}
+  const I = TS.interval*1000, e = tEl(), base = ctx.currentTime + .05, horizon = 3*3600e3;
+  const k0 = Math.floor(e/I) + 1;
+  if(TS.limit && k0 > TS.limit) return;
+  for(let k = k0; k <= k0 + 400; k++){
+    const off = k*I - e; if(off > horizon) break; if(off < 0) continue;
+    if(TS.warn && I >= 20000 && off - 10000 > 50) warnAt(base + (off - 10000)/1000);
+    if(TS.limit && k >= TS.limit){ const a = base + off/1000; soundAt(1, a); soundAt(.8, a + 1.5); soundAt(.7, a + 3); break; }
+    soundAt(1, base + off/1000);
+  }
+}
 function preWarn(){ if(TS.sound === "bowl") wood(.35); else if(TS.sound === "wood") wood(.35); else beep(.3); try{ TS.vibrate && navigator.vibrate && navigator.vibrate([40]); }catch(e){} }
 
 function tStart(){
   audio(); T.paused = false;
   if(T.done) tResetCore();
-  T.running = true; T.start = performance.now(); keepAwake();
+  T.running = true; T.start = Date.now(); keepAwake(); schedTimer();
   renderTimer(true);
 }
-function tPause(){ if(!T.running) return; T.acc += performance.now() - T.start; T.running = false; renderTimer(true); if(!S) releaseAwake(); }
+function tPause(){ if(!T.running) return; T.acc += Date.now() - T.start; T.running = false; unschedTimer(); renderTimer(true); if(!S) releaseAwake(); }
 function tResetCore(){ T.running = false; T.acc = 0; T.count = 0; T.warned = -1; T.done = false; }
-function tReset(){ tResetCore(); if(!S) releaseAwake(); renderTimer(true); }
+function tReset(){ tResetCore(); unschedTimer(); if(!S) releaseAwake(); renderTimer(true); }
 function tTick(){
   if(T.running){
     const I = TS.interval*1000, e = tEl(), n = Math.floor(e/I);
     if(n > T.count){
       T.count = n;
-      if(TS.limit && T.count >= TS.limit){ T.count = TS.limit; T.acc = TS.limit*I; T.running = false; T.done = true; signal(1); setTimeout(() => signal(.8), 1500); setTimeout(() => signal(.7), 3000); if(!S) releaseAwake(); renderTimer(true); return; }
-      signal(1);
+      const vib = p => { if(TS.vibrate && !document.hidden){ try{ navigator.vibrate && navigator.vibrate(p); }catch(e){} } };
+      if(TS.limit && T.count >= TS.limit){ T.count = TS.limit; T.acc = TS.limit*I; T.running = false; T.done = true; vib([220,300,220,300,220]); if(keepOsc){ try{ keepOsc.stop(0); }catch(e){} keepOsc = null; } SCHED = []; if(!S) releaseAwake(); renderTimer(true); return; }
+      vib([220]);
     }
-    if(TS.warn && I >= 20000){ const left = (T.count+1)*I - e; if(left <= 10000 && T.warned !== T.count){ T.warned = T.count; preWarn(); } }
+    if(TS.warn && I >= 20000){ const left = (T.count+1)*I - e; if(left <= 10000 && T.warned !== T.count){ T.warned = T.count; if(TS.vibrate && !document.hidden){ try{ navigator.vibrate([40]); }catch(e){} } } }
   }
   if(!$("#viewT").hidden) renderTimer(false);
   $("#dotT").hidden = !T.running;
@@ -1411,11 +1454,11 @@ function renderTimer(full){
     $("#tChips").innerHTML = PRESETS.map(v => `<button data-iv="${v}" aria-pressed="${TS.interval === v}" ${T.running ? "disabled" : ""}>${ivLabel(v)}</button>`).join("") + `<button data-iv="custom" aria-pressed="${custom}" ${T.running ? "disabled" : ""}>${custom ? ivLabel(TS.interval) : tx("Altre")}</button>`;
     $("#tChips").querySelectorAll("button").forEach(b => b.onclick = () => {
       if(b.dataset.iv === "custom"){ TS.interval = TS.custom; $("#tCustom").hidden = false; } else { TS.interval = +b.dataset.iv; $("#tCustom").hidden = true; }
-      T.count = Math.floor(T.acc/(TS.interval*1000)); T.warned = -1; T.done = false; saveT(); renderTimer(true);
+      T.count = Math.floor(tEl()/(TS.interval*1000)); T.warned = -1; T.done = false; saveT(); schedTimer(); renderTimer(true);
     });
     $("#cMin").textContent = Math.floor(TS.custom/60)+" min"; $("#cSec").textContent = (TS.custom%60)+" s";
     $("#tSound").innerHTML = [["bowl","Campana"],["wood","Fusta"],["beep","Bip"]].map(([v,l]) => `<input type="radio" name="tsound" id="snd-${v}" value="${v}" ${TS.sound === v ? "checked" : ""}><label for="snd-${v}">${tx(l)}</label>`).join("");
-    document.querySelectorAll('input[name="tsound"]').forEach(x => x.onchange = () => { TS.sound = x.value; saveT(); signal(.8); });
+    document.querySelectorAll('input[name="tsound"]').forEach(x => x.onchange = () => { TS.sound = x.value; saveT(); signal(.8); if(T.running) schedTimer(); });
     $("#tVol").value = TS.volume; $("#tVolL").textContent = TS.volume+"%";
     $("#tVib").checked = TS.vibrate; $("#tWarn").checked = TS.warn; 
     $("#tLim").textContent = TS.limit ? TS.limit : "∞";
@@ -1428,13 +1471,13 @@ const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v
 const ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="5" width="4" height="14" rx="1"/><rect x="13.5" y="5" width="4" height="14" rx="1"/></svg>';
 $("#tMain").onclick = () => T.running ? tPause() : tStart();
 $("#tReset").onclick = tReset;
-document.querySelectorAll("[data-cm]").forEach(b => b.onclick = () => { TS.custom = Math.max(5, Math.min(3600, TS.custom + 60*(+b.dataset.cm))); TS.interval = TS.custom; saveT(); T.count = Math.floor(T.acc/(TS.interval*1000)); renderTimer(true); });
-document.querySelectorAll("[data-cs]").forEach(b => b.onclick = () => { TS.custom = Math.max(5, Math.min(3600, TS.custom + (+b.dataset.cs))); TS.interval = TS.custom; saveT(); T.count = Math.floor(T.acc/(TS.interval*1000)); renderTimer(true); });
-document.querySelectorAll("[data-lim]").forEach(b => b.onclick = () => { TS.limit = Math.max(0, Math.min(99, TS.limit + (+b.dataset.lim))); saveT(); renderTimer(true); });
+document.querySelectorAll("[data-cm]").forEach(b => b.onclick = () => { TS.custom = Math.max(5, Math.min(3600, TS.custom + 60*(+b.dataset.cm))); TS.interval = TS.custom; saveT(); T.count = Math.floor(tEl()/(TS.interval*1000)); schedTimer(); renderTimer(true); });
+document.querySelectorAll("[data-cs]").forEach(b => b.onclick = () => { TS.custom = Math.max(5, Math.min(3600, TS.custom + (+b.dataset.cs))); TS.interval = TS.custom; saveT(); T.count = Math.floor(tEl()/(TS.interval*1000)); schedTimer(); renderTimer(true); });
+document.querySelectorAll("[data-lim]").forEach(b => b.onclick = () => { TS.limit = Math.max(0, Math.min(99, TS.limit + (+b.dataset.lim))); saveT(); schedTimer(); renderTimer(true); });
 $("#tVol").oninput = e => { TS.volume = +e.target.value; $("#tVolL").textContent = TS.volume+"%"; saveT(); };
-$("#tVol").onchange = () => signal(.8);
+$("#tVol").onchange = () => { signal(.8); if(T.running) schedTimer(); };
 $("#tVib").onchange = e => { TS.vibrate = e.target.checked; saveT(); };
-$("#tWarn").onchange = e => { TS.warn = e.target.checked; saveT(); };
+$("#tWarn").onchange = e => { TS.warn = e.target.checked; saveT(); if(T.running) schedTimer(); };
 if(!PRESETS.includes(TS.interval)) $("#tCustom").hidden = false;
 
 /* =================== pestanyes =================== */
