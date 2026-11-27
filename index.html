@@ -637,9 +637,10 @@ button{cursor:pointer}
 .medal .m-g{font-family:var(--display); font-weight:600; fill:var(--muted); font-variant-numeric:lining-nums}
 .medal.on .m-disc{fill:var(--mc, var(--gold))} .medal.on .m-g{fill:var(--on-color)} .medal.on .m-ray{stroke:var(--mc, var(--gold))}
 .ach-sec{display:flex; flex-direction:column; gap:12px}
-.ach-sec h3{font-family:var(--display); font-weight:500; font-size:1.6rem; margin:0; display:flex; justify-content:space-between; align-items:baseline; gap:10px}
-.ach-sec h3 .h3t{display:inline-flex; align-items:center; gap:9px}
-.ibtn.ib-s{width:21px; height:21px; min-width:21px; font-size:.74rem; line-height:1; transform:translateY(-3px)}
+.ach-sec h3{font-family:var(--display); font-weight:500; font-size:1.45rem; margin:0; display:flex; justify-content:space-between; align-items:baseline; gap:10px; line-height:1.18}
+.ach-sec h3 .h3t{min-width:0}
+.ach-sec h3 .h3r{display:inline-flex; align-items:center; gap:9px; flex:none; margin-left:auto; translate:0 -1px}
+.ibtn.ib-s{width:21px; height:21px; min-width:21px; font-size:.74rem; line-height:1}
 .sec-help{margin:-4px 0 0}
 .ach2{gap:8px; padding:12px 10px}
 .ach2 .medal{width:54px; height:54px}
@@ -1020,7 +1021,7 @@ const store = {
   set(k,v){ try{ localStorage.setItem(KEY+k, JSON.stringify(v)); }catch(e){} },
   del(k){ try{ localStorage.removeItem(KEY+k); }catch(e){} }
 };
-const APP_VERSION = "3.8";
+const APP_VERSION = "3.9";
 let settings = Object.assign({rewards:true, padStyle:"cards", sumStyle:"strip", goalOn:true, goal:30, interval:0, autoAway:true, askCause:true, period:"week", lang:"", advOpen:false}, store.get("settings",{}));
 if(settings.period === "q") settings.period = "all";
 let sessions = store.get("sessions", []);
@@ -2355,17 +2356,14 @@ function achCfg(){
   return c;
 }
 const cfgSave = () => store.set("settings", settings);
-const ACH_GRP = [["const","Sadhana · constància","--gold"],["time","Ashtanga · els vuit membres","--asana"],["post","Postures, pranayama i estudi","--study"],["own","Les meves fites","--gold"]];
+const ACH_GRP = [["const","Sadhana · constància","--gold"],["time","Ashtanga · els vuit membres","--asana"],["own","Les meves fites","--gold"]];
 const OPEN_T = [1, 5, 10, 25, 50, 100, 250, 500, 1000];
 const ACH_BASE = [
   {id:"first", g:"const", gl:"1", k:"n", t:1, u:"n", name:() => "Arambha", desc:() => tx("El començament") + " · " + tx("desa la primera sessió")},
   ...[[3,"Sankalpa","La intenció presa"],[7,"Abhyasa","La pràctica repetida"],[14,"Tapas","L'esforç que crema"],[30,"Nishtha","Constància ferma"],[100,"Sadhana","La pràctica d'una vida"]].map(([n,sa,m]) => ({id:"s"+n, g:"const", gl:n+"d", k:"streak", t:n, u:"n", name:() => sa, desc:() => tx(m) + " · " + tx("{n} dies seguits", {n})})),
   ...[[7,"Vrata","El vot complert"],[30,"Dhriti","Fermesa"],[100,"Tapasya","Disciplina sostinguda"]].map(([n,sa,m]) => ({id:"g"+n, g:"const", gl:n+"✓", k:"goal", t:n, u:"n", name:() => sa, desc:() => tx(m) + " · " + tx("compleix l'objectiu diari {n} dies", {n})})),
   ...[[1,"Yama"],[10,"Niyama"],[25,"Asana"],[50,"Pranayama"],[100,"Pratyahara"],[250,"Dharana"],[500,"Dhyana"],[1000,"Samadhi"]].map(([n,sa],i) => ({id:"h"+n, g:"time", gl:n+"h", k:"asana", k2:"prana", two:1, t:n*HOUR, u:"ms", name:() => sa, desc:() => tx("Membre {i} de vuit", {i:i+1}) + " · " + tx(n === 1 ? "{n} hora en cada activitat" : "{n} hores en cada activitat", {n})})),
-    ...[["sirsa","Raja","El rei de les postures","Sirsasana"],["sarva","Mata","La mare de les postures","Sarvangasana"],["sava","Vishranti","El descans conscient","Savasana"]].map(([k,sa,m,p]) => ({id:k+"1", g:"post", gl:"1h", k, open:1, tiers:OPEN_T, t:HOUR, u:"ms", name:() => sa, desc:() => tx(m) + " · " + p})),
-  {id:"pr5", g:"post", gl:"1h", k:"prana", open:1, tiers:OPEN_T, t:HOUR, u:"ms", name:() => "Prana", desc:() => tx("L'alè") + " · " + actName("pranayama")},
-  {id:"st5", g:"post", gl:"1h", k:"study", open:1, tiers:OPEN_T, t:HOUR, u:"ms", name:() => "Svadhyaya", desc:() => tx("L'estudi de si mateix") + " · " + actName("study")}
-];
+  ];
 
 const achDefs = () => ACH_BASE.concat(achCfg().custom.map(c => ({id:c.id, own:true, g:"own", gl:c.h+"h", k:"act:"+c.act, t:c.h*HOUR, u:"ms", name:() => actName(c.act) + " · " + c.h + " h", desc:() => tx(c.h === 1 ? "Acumula {n} hora" : "Acumula {n} hores", {n:c.h})})));
 let ACHS = null;
@@ -2639,13 +2637,13 @@ const actSelect = id => `<select id="${id}" class="sel">${ACT_KEYS.map(k => `<op
 const SEC_HELP = {
   const: "Compta dies, no activitats. Un dia compta si has practicat almenys 1 minut entre asana, pranayama i estudi. Fa servir la teva millor ratxa de sempre, així que no es perd si un dia la trenques.",
   time: "Hores acumulades des del primer dia, comptades per separat: el cercle de l'esquerra és asana i el de la dreta pranayama. N'hi ha prou amb una de les dues per encendre el membre. L'estudi, el temps perdut i les pauses no hi compten.",
-  post: "Comptadors oberts: no s'acaben mai. Les hores que fas en aquella postura o activitat es van sumant des del primer dia, i reps un premi cada cop que passes una marca: 1, 5, 10, 25, 50, 100, 250, 500 i 1.000 hores.",
+  postOff: "Comptadors oberts: no s'acaben mai. Les hores que fas en aquella postura o activitat es van sumant des del primer dia, i reps un premi cada cop que passes una marca: 1, 5, 10, 25, 50, 100, 250, 500 i 1.000 hores.",
   own: "Les fites que t'has creat tu. Compten les hores acumulades de l'activitat que vas triar.",
   hab: "21 dies seguits arribant al temps d'un nivell. Si un dia no hi arribes, la ratxa torna a començar. El marc daurat, platejat o de bronze marca fins on has arribat.",
   dia: "Només el temps d'avui en cada activitat. Les estrelles s'encenen a mesura que vas passant els nivells d'intensitat.",
   rec: "Compara el que portes en aquest període amb el període anterior complet. Compta asana, pranayama i estudi."
 };
-const secH = (title, small, id, help) => `<h3><span class="h3t">${title}<button class="ibtn ib-s" data-info="sh-${id}" aria-label="${tx("Informació")}" aria-expanded="false">i</button></span>${small ? `<small>${small}</small>` : ""}</h3><p class="t-help sec-help" id="sh-${id}" hidden>${tx(help)}</p>`;
+const secH = (title, small, id, help) => `<h3><span class="h3t">${title}</span><span class="h3r"><button class="ibtn ib-s" data-info="sh-${id}" aria-label="${tx("Informació")}" aria-expanded="false">i</button>${small ? `<small>${small}</small>` : ""}</span></h3><p class="t-help sec-help" id="sh-${id}" hidden>${tx(help)}</p>`;
 function renderAch(){
   const el = $("#achv"), keep = el.scrollTop, cfg = achCfg(), list = achList(achEdit), shown = list.filter(a => !a.off), nOn = shown.filter(a => a.on).length, sr = streaks(sessions), days = n => tx(n === 1 ? "{n} dia" : "{n} dies", {n});
   const D = dailyList(true, true);

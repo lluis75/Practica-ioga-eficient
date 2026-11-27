@@ -1,5 +1,5 @@
 /* Samyama Pràctica — service worker: funciona sense connexió */
-const VERSION = "sthira-v3.8";
+const VERSION = "sthira-v3.9";
 const VOICE_CACHE = "sthira-voice-1";
 const SHELL = ["./", "./index.html", "./privacy.html", "./manifest.webmanifest", "./icons/sthira2-192.png", "./icons/sthira2-512.png", "./icons/sthira2-apple-180.png", "./icons/sthira2-maskable-512.png", "./fonts/cormorant-garamond-latin-400-italic.woff2", "./fonts/cormorant-garamond-latin-400-normal.woff2", "./fonts/cormorant-garamond-latin-500-italic.woff2", "./fonts/cormorant-garamond-latin-500-normal.woff2", "./fonts/cormorant-garamond-latin-600-italic.woff2", "./fonts/cormorant-garamond-latin-600-normal.woff2", "./fonts/cormorant-garamond-latin-ext-400-italic.woff2", "./fonts/cormorant-garamond-latin-ext-400-normal.woff2", "./fonts/cormorant-garamond-latin-ext-500-italic.woff2", "./fonts/cormorant-garamond-latin-ext-500-normal.woff2", "./fonts/cormorant-garamond-latin-ext-600-italic.woff2", "./fonts/cormorant-garamond-latin-ext-600-normal.woff2", "./fonts/fonts.css", "./fonts/jost-latin-400-normal.woff2", "./fonts/jost-latin-500-normal.woff2", "./fonts/jost-latin-600-normal.woff2", "./fonts/jost-latin-ext-400-normal.woff2", "./fonts/jost-latin-ext-500-normal.woff2", "./fonts/jost-latin-ext-600-normal.woff2"];
 
