@@ -605,10 +605,9 @@ button{cursor:pointer}
 .recs{display:flex; flex-direction:column; gap:10px}
 .rec-h .stars{font-size:1rem}
 .rec.m-bronze{--m1:#D98B41; --m2:#7A4512} .rec.m-silver{--m1:#9FB2C6; --m2:#4E6279} .rec.m-gold{--m1:#F2C44B; --m2:#8E6208}
-.recs .rec.m-bronze, .recs .rec.m-silver, .recs .rec.m-gold{border:2px solid transparent; background:linear-gradient(168deg, color-mix(in srgb, var(--m1) 21%, var(--surface)), var(--surface) 72%) padding-box, linear-gradient(140deg, var(--m1), var(--m2) 52%, var(--m1)) border-box}
-.recs .rec.m-bronze .stars, .recs .rec.m-silver .stars, .recs .rec.m-gold .stars{color:var(--m2)}
-.recs .rec.m-bronze .hb-b i, .recs .rec.m-silver .hb-b i, .recs .rec.m-gold .hb-b i{background:var(--m2)}
-.recs .rec.m-bronze .hb-d, .recs .rec.m-silver .hb-d, .recs .rec.m-gold .hb-d{color:var(--m2)}
+.recs .rec.m-bronze, .recs .rec.m-silver, .recs .rec.m-gold{border:3px solid transparent; border-radius:20px;
+  box-shadow:inset 0 0 0 2px var(--surface), inset 0 0 0 3.5px color-mix(in srgb, var(--m1) 62%, var(--surface)); background:linear-gradient(168deg, color-mix(in srgb, var(--m1) 21%, var(--surface)), var(--surface) 72%) padding-box, linear-gradient(140deg, var(--m1), var(--m2) 52%, var(--m1)) border-box}
+
 .hb-row{display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:9px; font-size:.82rem; color:var(--muted); font-variant-numeric:lining-nums tabular-nums}
 .hb-n{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .hb-n em{font-style:normal; opacity:.75}
@@ -838,7 +837,7 @@ body.m-nofill .seal{background:none !important}
 .cele-big.m-bronze{--m1:#D98B41; --m2:#7A4512} .cele-big.m-silver{--m1:#9FB2C6; --m2:#4E6279} .cele-big.m-gold{--m1:#F2C44B; --m2:#8E6208}
 /* hàbits, a la pantalla de fites */
 .hb-top{display:flex; align-items:baseline; gap:7px; margin:2px 0 0}
-.hb-top b{font-family:var(--display); font-size:2rem; line-height:1; color:var(--m2); font-variant-numeric:lining-nums tabular-nums}
+.hb-top b{font-family:var(--display); font-size:2rem; line-height:1; color:var(--mc); font-variant-numeric:lining-nums tabular-nums}
 .hb-top span{font-size:.86rem; color:var(--muted)}
 .hb-rec{font-size:.76rem; color:var(--muted); margin:0 0 4px}
 </style>
@@ -995,7 +994,7 @@ const store = {
   set(k,v){ try{ localStorage.setItem(KEY+k, JSON.stringify(v)); }catch(e){} },
   del(k){ try{ localStorage.removeItem(KEY+k); }catch(e){} }
 };
-const APP_VERSION = "3.3";
+const APP_VERSION = "3.4";
 let settings = Object.assign({rewards:true, padStyle:"cards", sumStyle:"strip", goalOn:true, goal:30, interval:0, autoAway:true, askCause:true, period:"week", lang:"", advOpen:false}, store.get("settings",{}));
 if(settings.period === "q") settings.period = "all";
 let sessions = store.get("sessions", []);
